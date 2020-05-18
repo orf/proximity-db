@@ -1,3 +1,4 @@
+use approx::RelativeEq;
 use criterion::measurement::WallTime;
 use criterion::{
     black_box, criterion_group, criterion_main, BenchmarkGroup, BenchmarkId, Criterion, Throughput,
@@ -11,14 +12,13 @@ use nalgebra::{
 };
 use nalgebra::{U32, U64};
 use num_traits::Float;
+use num_traits::FromPrimitive;
 use rand::{thread_rng, Rng};
 use rayon::prelude::*;
 use simba;
 use simba::scalar::{ComplexField, RealField};
 use std::time::Duration;
 use typenum::{U128, U256, U384, U512};
-use approx::RelativeEq;
-use num_traits::FromPrimitive;
 
 fn criterion_benchmark<DimX, DType>(group: &mut BenchmarkGroup<WallTime>)
 where
@@ -67,12 +67,10 @@ where
                             .into_par_iter()
                             .filter_map(|p| {
                                 // simulate comparing
-                                distance(&our_point, p).partial_cmp(
-                                    &comparison
-                                )
+                                distance(&our_point, p).partial_cmp(&comparison)
                             })
                             // if we don't do this, nothing happens
-                            .count()
+                            .count();
                     });
                 });
             },
