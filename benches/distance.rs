@@ -81,7 +81,8 @@ where
 
 fn run_bench(c: &mut Criterion) {
     let mut g = c.benchmark_group("Test");
-    g.warm_up_time(Duration::from_secs(20));
+    g.warm_up_time(Duration::from_secs(10));
+    g.measurement_time(Duration::from_secs(30));
     criterion_benchmark::<U32, f32>(&mut g);
     criterion_benchmark::<U64, f32>(&mut g);
     criterion_benchmark::<U128, f32>(&mut g);
