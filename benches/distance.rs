@@ -29,9 +29,14 @@ where
     <DefaultAllocator as Allocator<DType, DimX>>::Buffer: Send + Sync,
 {
     let mut rng = thread_rng();
+    let pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(6)
+        .build()
+        .unwrap();
+
     for size in [10_000, 100_000, 250_000, 500_000, 1_000_000, 2_000_000].iter() {
         let mut collection: Collection<DType, DimX> =
-            embeddingdb::collection::Collection::new("My Collection");
+            embeddingdb::collection::Collection::new("My Collection", &pool);
         for _ in 0..*size {
             // I HAVE NO FUCKING CLUE WHAT I AM DOING
             // WHAT THE FUCK IS ANY OF THIS CODE
@@ -39,9 +44,7 @@ where
             for _ in 0..(DimX::dim()) {
                 random_vec.push(DType::from_f64(rng.gen::<f64>()).unwrap());
             }
-            collection
-                .points
-                .push(VectorN::<DType, DimX>::from_vec(random_vec).into());
+            collection.push(VectorN::<DType, DimX>::from_vec(random_vec).into());
         }
         let mut random_vec: Vec<DType> = Vec::with_capacity(DimX::dim());
         for _ in 0..(DimX::dim()) {
@@ -53,14 +56,10 @@ where
         group.bench_with_input(
             BenchmarkId::new(
                 format!("{}/{}", std::any::type_name::<DType>(), DimX::dim()),
-                collection.points.len(),
+                collection.len(),
             ),
             &collection.points,
             |b, points| {
-                let pool = rayon::ThreadPoolBuilder::new()
-                    .num_threads(6)
-                    .build()
-                    .unwrap();
                 return pool.install(|| {
                     b.iter(|| {
                         return points
