@@ -1,5 +1,5 @@
 use nalgebra::allocator::Allocator;
-use nalgebra::{DefaultAllocator, DimName, Point, Scalar, VectorN};
+use nalgebra::{DefaultAllocator, DimName, Point, Scalar};
 use rayon::ThreadPool;
 
 pub struct Collection<'a, F, DimX>

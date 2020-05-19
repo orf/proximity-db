@@ -1,7 +1,3 @@
-use crate::collection::Collection;
-use nalgebra::{distance, Matrix2x3, MatrixMN, MatrixN, Point, Point3, VectorN, U1, U3};
-use typenum::U256;
-
 pub mod collection;
 mod point;
 

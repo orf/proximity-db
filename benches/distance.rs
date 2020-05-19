@@ -1,4 +1,4 @@
-use approx::RelativeEq;
+
 use criterion::measurement::WallTime;
 use criterion::{
     black_box, criterion_group, criterion_main, BenchmarkGroup, BenchmarkId, Criterion, Throughput,
@@ -11,16 +11,16 @@ use nalgebra::{
     VectorN, U1, U3,
 };
 use nalgebra::{U32, U64};
-use num_traits::Float;
+
 use num_traits::FromPrimitive;
 use rand::{thread_rng, Rng};
-use rayon::prelude::*;
+
 use simba;
 use simba::scalar::{ComplexField, RealField};
 use std::time::Duration;
 use typenum::{U128, U256, U384, U512};
 
-fn criterion_benchmark<DimX, DType>(group: &mut BenchmarkGroup<WallTime>)
+fn criterion_benchmark<DimX, DType>(_group: &mut BenchmarkGroup<WallTime>)
 where
     DimX: DimName,
     DType: ComplexField + RealField,
@@ -34,47 +34,53 @@ where
         .build()
         .unwrap();
 
-    for size in [10_000, 100_000, 250_000, 500_000, 1_000_000, 2_000_000].iter() {
-        let mut collection: Collection<DType, DimX> =
+    for _size in [10_000, 100_000, 250_000, 500_000, 1_000_000, 2_000_000].iter() {
+        let collection: Collection<DType, DimX> =
             embeddingdb::collection::Collection::new("My Collection", &pool);
-        for _ in 0..*size {
-            // I HAVE NO FUCKING CLUE WHAT I AM DOING
-            // WHAT THE FUCK IS ANY OF THIS CODE
-            let mut random_vec: Vec<DType> = Vec::with_capacity(DimX::dim());
-            for _ in 0..(DimX::dim()) {
-                random_vec.push(DType::from_f64(rng.gen::<f64>()).unwrap());
-            }
-            collection.push(VectorN::<DType, DimX>::from_vec(random_vec).into());
-        }
+
         let mut random_vec: Vec<DType> = Vec::with_capacity(DimX::dim());
         for _ in 0..(DimX::dim()) {
             random_vec.push(DType::from_f64(rng.gen::<f64>()).unwrap());
         }
-        let our_point: Point<DType, DimX> = VectorN::<DType, DimX>::from_vec(random_vec).into();
-        let comparison: <DType as ComplexField>::RealField = DType::from_f32(10.).unwrap();
-        group.throughput(Throughput::Elements(collection.points.len() as u64));
-        group.bench_with_input(
-            BenchmarkId::new(
-                format!("{}/{}", std::any::type_name::<DType>(), DimX::dim()),
-                collection.len(),
-            ),
-            &collection.points,
-            |b, points| {
-                return pool.install(|| {
-                    b.iter(|| {
-                        return points
-                            .into_par_iter()
-                            .filter_map(|p| {
-                                // simulate comparing
-                                distance(&our_point, p).partial_cmp(&comparison)
-                            })
-                            // if we don't do this, nothing happens
-                            .count();
-                    });
-                });
-            },
-        );
-        std::mem::drop(collection)
+        collection.push(VectorN::<DType, DimX>::from_vec(random_vec).into());
+        // for _ in 0..*size {
+        //     // I HAVE NO FUCKING CLUE WHAT I AM DOING
+        //     // WHAT THE FUCK IS ANY OF THIS CODE
+        //     let mut random_vec: Vec<DType> = Vec::with_capacity(DimX::dim());
+        //     for _ in 0..(DimX::dim()) {
+        //         random_vec.push(DType::from_f64(rng.gen::<f64>()).unwrap());
+        //     }
+        //     collection.push(VectorN::<DType, DimX>::from_vec(random_vec).into());
+        // }
+        let mut random_vec: Vec<DType> = Vec::with_capacity(DimX::dim());
+        for _ in 0..(DimX::dim()) {
+            random_vec.push(DType::from_f64(rng.gen::<f64>()).unwrap());
+        }
+        let _our_point: Point<DType, DimX> = VectorN::<DType, DimX>::from_vec(random_vec).into();
+        let _comparison: <DType as ComplexField>::RealField = DType::from_f32(10.).unwrap();
+        // group.throughput(Throughput::Elements(collection.points.len() as u64));
+        // group.bench_with_input(
+        //     BenchmarkId::new(
+        //         format!("{}/{}", std::any::type_name::<DType>(), DimX::dim()),
+        //         collection.len(),
+        //     ),
+        //     &collection.points,
+        //     |b, points| {
+        //         return pool.install(|| {
+        //             b.iter(|| {
+        //                 return points
+        //                     .into_par_iter()
+        //                     .filter_map(|p| {
+        //                         // simulate comparing
+        //                         distance(&our_point, p).partial_cmp(&comparison)
+        //                     })
+        //                     // if we don't do this, nothing happens
+        //                     .count();
+        //             });
+        //         });
+        //     },
+        // );
+        // std::mem::drop(collection)
     }
 }
 
