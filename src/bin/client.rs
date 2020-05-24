@@ -26,8 +26,6 @@ struct Opt {
 
 use crossbeam_channel::bounded;
 
-use rayon::prelude::*;
-
 use std::sync::{Arc, RwLock};
 use std::thread::spawn;
 
@@ -39,7 +37,7 @@ fn main() -> anyhow::Result<()> {
     {
         let mut mut_thing = thing.write().unwrap();
         for _ in 0..100 {
-            mut_thing.add("some-name".to_string(), vec![1.0, 2.0, 3.0])?;
+            mut_thing.add("some-name".to_string(), vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0])?;
         }
     }
     let (sender, receiver) = bounded(1);
@@ -49,13 +47,17 @@ fn main() -> anyhow::Result<()> {
         another_thing.read().unwrap().query(
             "some-name".to_string(),
             10.0,
-            vec![1.0, 2.0, 3.0],
+            vec![1.0, 2.0, 3.0, 3.0, 4.0, 1.0],
             sender,
         )
     });
 
-    let mut thing = receiver.iter();
-    thing.next();
-    drop(receiver);
+    for thing in receiver.iter() {
+        println!("{:?}", thing);
+    }
+
+    // let mut thing = receiver.iter();
+    // thing.next();
+    // drop(receiver);
     Ok(())
 }

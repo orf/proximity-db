@@ -48,3 +48,5 @@ impl EmbeddingDb for EmbeddingDBHandler {
         unimplemented!()
     }
 }
+
+// https://github.com/hyperium/tonic/blob/6f378e2bd0cdf3a1a3df87e1feff842a8a599142/tonic-health/src/server.rs#L156

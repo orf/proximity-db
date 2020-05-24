@@ -1,7 +1,6 @@
 pub mod constellations;
 pub mod grpc;
 pub mod handler;
-pub mod help;
 pub mod sky;
 
 use enum_iterator::IntoEnumIterator;
@@ -11,7 +10,7 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 #[repr(usize)]
 pub enum SupportedSizes {
     // For debugging
-    U3 = 3,
+    U6 = 6,
     //
     // U64 = 64,
     // U128 = 128,
@@ -25,5 +24,15 @@ impl SupportedSizes {
             let value: usize = b.into();
             format!("{}{}, ", a, value)
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_possible_choices() {
+        assert_eq!(SupportedSizes::possible_choices(), "6, ");
     }
 }

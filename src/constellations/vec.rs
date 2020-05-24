@@ -1,7 +1,7 @@
 use crate::constellations::Constellation;
 use crossbeam_channel::Sender;
 use nalgebra::allocator::Allocator;
-use nalgebra::{distance, ComplexField, DefaultAllocator, DimName, Point, RealField};
+use nalgebra::{distance, DefaultAllocator, DimName, Point};
 use rayon::prelude::*;
 
 /// A constellation contains lots of points.
@@ -53,7 +53,8 @@ where
             .par_iter()
             .try_for_each_with(sender, |s, p| {
                 let dist = distance(&point, &p);
-                if dist < within {
+                println!("Distance: {:?}", dist);
+                if dist <= within {
                     return s.send((dist, p.coords.as_slice().into()));
                 }
                 Ok(())
@@ -62,4 +63,37 @@ where
     }
 }
 
-// https://github.com/hyperium/tonic/blob/6f378e2bd0cdf3a1a3df87e1feff842a8a599142/tonic-health/src/server.rs#L156
+#[cfg(test)]
+mod tests {
+    // Note this useful idiom: importing names from outer (for mod tests) scope.
+    use super::*;
+    use crossbeam_channel::bounded;
+    use nalgebra::U1;
+
+    #[test]
+    fn test_add() {
+        let mut constellation = VecConstellation::<U1>::default();
+        constellation.add_point(Point::<f32, U1>::new(1.0));
+        assert_eq!(constellation.len(), 1);
+    }
+
+    #[test]
+    fn test_add_multiple() {
+        let mut constellation = VecConstellation::<U1>::default();
+        let points: Vec<Point<f32, U1>> =
+            vec![Point::<f32, U1>::new(1.0), Point::<f32, U1>::new(1.0)];
+        constellation.add_points(&points);
+        assert_eq!(constellation.len(), 2);
+    }
+
+    #[test]
+    fn test_query() {
+        let mut constellation = VecConstellation::<U1>::default();
+        constellation.add_point(Point::<f32, U1>::new(1.0));
+        let (sender, receiver) = bounded(1);
+        let target_point = Point::<f32, U1>::new(1.0);
+        constellation.find_stream(&target_point, 1.0, sender);
+        let items: Vec<(f32, Vec<f32>)> = receiver.iter().collect();
+        assert_eq!(items, vec![(0.0, vec![1.0])]);
+    }
+}

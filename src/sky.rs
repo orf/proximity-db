@@ -1,9 +1,8 @@
 use crate::constellations::{Constellation, VecConstellation};
 use crate::SupportedSizes;
 use crossbeam_channel::Sender;
-use nalgebra::{ComplexField, DimName, Point, RealField, Vector1, VectorN, U1, U3, U64};
+use nalgebra::{Point, U6};
 use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
-use rayon::prelude::*;
 use std::collections::HashMap;
 
 use std::sync::{Arc, RwLock};
@@ -23,7 +22,7 @@ pub enum SkyError {
 #[derive(Default)]
 pub struct Sky {
     // For debugging!
-    u3: HashMap<String, Arc<RwLock<VecConstellation<U3>>>>,
+    u6: HashMap<String, Arc<RwLock<VecConstellation<U6>>>>,
     // u64: HashMap<String, VecConstellation<U64>>,
     // u128: HashMap<String, VecConstellation<U128>>,
     // u256: HashMap<String, VecConstellation<U256>>,
@@ -35,9 +34,9 @@ impl<'a> Sky {
         let supported_size = SupportedSizes::try_from_primitive(values.len())?;
 
         match supported_size {
-            SupportedSizes::U3 => {
-                let point = Point::<f32, U3>::from_slice(&values);
-                let mut thing = self.u3.entry(name).or_default().write().unwrap();
+            SupportedSizes::U6 => {
+                let point = Point::<f32, U6>::from_slice(&values);
+                let mut thing = self.u6.entry(name).or_default().write().unwrap();
                 thing.add_point(point);
             }
         }
@@ -53,13 +52,13 @@ impl<'a> Sky {
     ) -> Result<(), SkyError> {
         let supported_size = SupportedSizes::try_from_primitive(values.len())?;
         match supported_size {
-            SupportedSizes::U3 => {
+            SupportedSizes::U6 => {
                 let constellation = self
-                    .u3
+                    .u6
                     .get(&name)
                     .ok_or_else(|| SkyError::NotFound(name.clone(), values.len()))?
                     .clone();
-                let point = Point::<f32, U3>::from_slice(&values);
+                let point = Point::<f32, U6>::from_slice(&values);
                 spawn(move || {
                     let reader = constellation.read().unwrap();
                     reader.find_stream(&point, within_distance, sender);
@@ -68,5 +67,32 @@ impl<'a> Sky {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    // Note this useful idiom: importing names from outer (for mod tests) scope.
+    use super::*;
+    use crossbeam_channel::bounded;
+
+    #[test]
+    fn test_add() {
+        let mut sky = Sky::default();
+        sky.add("hello".into(), vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+            .unwrap();
+    }
+
+    #[test]
+    fn test_query() {
+        let values = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
+        let mut sky = Sky::default();
+        sky.add("hello".into(), values.clone()).unwrap();
+        let (sender, receiver) = bounded(1);
+        sky.query("hello".into(), 0.0, values.clone(), sender)
+            .unwrap();
+
+        let items: Vec<(f32, Vec<f32>)> = receiver.iter().collect();
+        assert_eq!(items, vec![(0.0, values)]);
     }
 }

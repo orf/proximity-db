@@ -1,4 +1,4 @@
-use nalgebra::{ComplexField, DefaultAllocator, DimName, Point, RealField};
+use nalgebra::{DefaultAllocator, DimName, Point};
 
 mod vec;
 
@@ -9,7 +9,6 @@ pub use vec::VecConstellation;
 
 pub trait Constellation<'a, DimX>: 'static + Default + Sync + Send
 where
-    // F: ComplexField + RealField,
     DimX: DimName + Sync,
     DefaultAllocator: Allocator<f32, DimX>,
     <DefaultAllocator as Allocator<f32, DimX>>::Buffer: Send + Sync,

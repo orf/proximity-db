@@ -3,8 +3,8 @@ use criterion::{
     black_box, criterion_group, criterion_main, BenchmarkGroup, BenchmarkId, Criterion, Throughput,
 };
 use nalgebra::allocator::Allocator;
-use nalgebra::{ComplexField, DefaultAllocator, DimName, RealField, VectorN};
-use nalgebra::{U64};
+use nalgebra::U64;
+use nalgebra::{DefaultAllocator, DimName, VectorN};
 
 use crossbeam_channel::unbounded;
 use embedding_db::constellations::{Constellation, VecConstellation};
