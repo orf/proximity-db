@@ -4,7 +4,7 @@ use criterion::{
 };
 use nalgebra::allocator::Allocator;
 use nalgebra::{ComplexField, DefaultAllocator, DimName, RealField, VectorN};
-use nalgebra::{U32, U64};
+use nalgebra::{U64};
 
 use crossbeam_channel::unbounded;
 use embedding_db::constellations::{Constellation, VecConstellation};
@@ -39,7 +39,7 @@ where
             |b| {
                 return pool.install(|| {
                     b.iter(|| {
-                        let (send, recv) = unbounded();
+                        let (send, _recv) = unbounded();
                         black_box(collection.find_stream(&our_point, 0.1, send));
                     });
                 });
