@@ -3,9 +3,6 @@ use crossbeam_channel::Sender;
 use nalgebra::allocator::Allocator;
 use nalgebra::{distance, ComplexField, DefaultAllocator, DimName, Point, RealField};
 use rayon::prelude::*;
-use std::sync::mpsc::SyncSender;
-use std::thread::sleep;
-use tokio::time::Duration;
 
 /// A constellation contains lots of points.
 pub struct VecConstellation<DimX>
@@ -46,7 +43,7 @@ where
 
     fn find_stream(
         &'a self,
-        point: Point<f32, DimX>,
+        point: &Point<f32, DimX>,
         within: f32,
         sender: Sender<(f32, Vec<f32>)>,
     ) {

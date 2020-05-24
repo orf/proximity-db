@@ -2,9 +2,9 @@ use nalgebra::{ComplexField, DefaultAllocator, DimName, Point, RealField};
 
 mod vec;
 
-use crossbeam_channel::{bounded, Receiver, Sender};
+use crossbeam_channel::Sender;
 use nalgebra::allocator::Allocator;
-use std::sync::mpsc::SyncSender;
+
 pub use vec::VecConstellation;
 
 pub trait Constellation<'a, DimX>: 'static + Default + Sync + Send
@@ -18,7 +18,12 @@ where
     fn add_points(&mut self, points: &[Point<f32, DimX>]);
     fn len(&self) -> usize;
 
-    fn find_stream(&'a self, point: Point<f32, DimX>, within: f32, sender: Sender<(f32, Vec<f32>)>);
+    fn find_stream(
+        &'a self,
+        point: &Point<f32, DimX>,
+        within: f32,
+        sender: Sender<(f32, Vec<f32>)>,
+    );
 
     fn size(&self) -> usize {
         DimX::dim()

@@ -1,5 +1,5 @@
 use embedding_db::sky::Sky;
-use std::path::PathBuf;
+
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -24,11 +24,10 @@ struct Opt {
     file_name: String,
 }
 
-use crossbeam_channel::{bounded, unbounded};
-use embedding_db::help::Container;
+use crossbeam_channel::bounded;
+
 use rayon::prelude::*;
-use std::sync::mpsc::channel;
-use std::sync::mpsc::sync_channel;
+
 use std::sync::{Arc, RwLock};
 use std::thread::spawn;
 
@@ -36,7 +35,7 @@ fn main() -> anyhow::Result<()> {
     // let opt = Opt::from_args();
     // println!("{:?}", opt);
 
-    let mut thing = Arc::new(RwLock::new(Sky::default()));
+    let thing = Arc::new(RwLock::new(Sky::default()));
     {
         let mut mut_thing = thing.write().unwrap();
         for _ in 0..100 {

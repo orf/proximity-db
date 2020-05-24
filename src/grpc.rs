@@ -1,2 +1,2 @@
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 tonic::include_proto!("grpc");

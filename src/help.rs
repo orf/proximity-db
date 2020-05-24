@@ -1,6 +1,5 @@
 use crossbeam_channel::Sender;
 use rayon::prelude::*;
-use std::sync::Arc;
 
 #[derive(Default)]
 pub struct Container {

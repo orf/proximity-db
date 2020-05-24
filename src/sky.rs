@@ -1,15 +1,14 @@
 use crate::constellations::{Constellation, VecConstellation};
 use crate::SupportedSizes;
-use crossbeam_channel::{unbounded, Receiver, Sender};
+use crossbeam_channel::Sender;
 use nalgebra::{ComplexField, DimName, Point, RealField, Vector1, VectorN, U1, U3, U64};
 use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
 use rayon::prelude::*;
 use std::collections::HashMap;
-use std::sync::mpsc::SyncSender;
+
 use std::sync::{Arc, RwLock};
 use std::thread::spawn;
 use thiserror::Error;
-use typenum::{U128, U256, U512};
 
 #[derive(Error, Debug)]
 pub enum SkyError {
@@ -63,7 +62,7 @@ impl<'a> Sky {
                 let point = Point::<f32, U3>::from_slice(&values);
                 spawn(move || {
                     let reader = constellation.read().unwrap();
-                    reader.find_stream(point, within_distance, sender);
+                    reader.find_stream(&point, within_distance, sender);
                 });
             }
         }

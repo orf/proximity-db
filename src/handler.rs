@@ -1,6 +1,6 @@
 use crate::grpc::{
     AddRequest, AddResponse, DeleteRequest, DeleteResponse, DescribeRequest, DescribeResponse,
-    ListRequest, Point, SearchRequest, SearchResponse,
+    ListRequest, SearchRequest, SearchResponse,
 };
 use tokio::sync::mpsc;
 use tonic::{Request, Response, Status};
@@ -16,18 +16,18 @@ impl EmbeddingDb for EmbeddingDBHandler {
 
     async fn search(
         &self,
-        request: Request<SearchRequest>,
+        _request: Request<SearchRequest>,
     ) -> Result<Response<Self::SearchStream>, Status> {
         unimplemented!()
     }
 
-    async fn add(&self, request: Request<AddRequest>) -> Result<Response<AddResponse>, Status> {
+    async fn add(&self, _request: Request<AddRequest>) -> Result<Response<AddResponse>, Status> {
         unimplemented!()
     }
 
     async fn delete(
         &self,
-        request: Request<DeleteRequest>,
+        _request: Request<DeleteRequest>,
     ) -> Result<Response<DeleteResponse>, Status> {
         unimplemented!()
     }
@@ -36,14 +36,14 @@ impl EmbeddingDb for EmbeddingDBHandler {
 
     async fn list_groups(
         &self,
-        request: Request<ListRequest>,
+        _request: Request<ListRequest>,
     ) -> Result<Response<Self::ListGroupsStream>, Status> {
         unimplemented!()
     }
 
     async fn describe_group(
         &self,
-        request: Request<DescribeRequest>,
+        _request: Request<DescribeRequest>,
     ) -> Result<Response<DescribeResponse>, Status> {
         unimplemented!()
     }

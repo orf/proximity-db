@@ -1,6 +1,6 @@
 use embedding_db::grpc::embedding_db_server::EmbeddingDbServer;
 use embedding_db::handler::EmbeddingDBHandler;
-use tonic::{transport::Server, Request, Response, Status};
+use tonic::transport::Server;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

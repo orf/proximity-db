@@ -2,11 +2,11 @@ use criterion::measurement::WallTime;
 use criterion::{
     black_box, criterion_group, criterion_main, BenchmarkGroup, BenchmarkId, Criterion, Throughput,
 };
-use embedding_db::constellation::VecConstellation;
 use nalgebra::allocator::Allocator;
 use nalgebra::{ComplexField, DefaultAllocator, DimName, RealField, VectorN};
 use nalgebra::{U32, U64};
 
+use crossbeam_channel::unbounded;
 use embedding_db::constellations::{Constellation, VecConstellation};
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
@@ -26,11 +26,11 @@ where
         .unwrap();
 
     for size in (100_000..500_000).step_by(100_000) {
-        let mut collection = VecConstellation::<DimX>::new();
+        let mut collection = VecConstellation::default();
 
         let random_points: Vec<_> = (0..size).map(|_| VectorN::new_random().into()).collect();
 
-        collection.extend(&random_points);
+        collection.add_points(&random_points);
 
         let our_point = VectorN::new_random().into();
         group.throughput(Throughput::Elements(collection.len() as u64));
@@ -38,7 +38,10 @@ where
             BenchmarkId::new(format!("{}", DimX::dim()), collection.len()),
             |b| {
                 return pool.install(|| {
-                    b.iter(|| return black_box(collection.find(&our_point, 0.5f32).len()));
+                    b.iter(|| {
+                        let (send, recv) = unbounded();
+                        black_box(collection.find_stream(&our_point, 0.1, send));
+                    });
                 });
             },
         );
