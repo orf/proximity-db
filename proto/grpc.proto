@@ -1,0 +1,56 @@
+syntax = "proto3";
+package grpc;
+
+service EmbeddingDB {
+  rpc Search(SearchRequest) returns (stream SearchResponse) {}
+  rpc Add(AddRequest) returns (AddResponse) {}
+  rpc Delete(DeleteRequest) returns (DeleteResponse) {}
+
+  // Meta-requests
+  rpc ListGroups(ListRequest) returns (stream DescribeResponse) {}
+  rpc DescribeGroup(DescribeRequest) returns (DescribeResponse) {}
+}
+
+message Point {
+  repeated float point = 1;
+}
+
+message AddRequest {
+  string name = 1;
+  repeated Point points = 2;
+}
+
+message AddResponse {}
+
+message SearchRequest {
+  string name = 1;
+  float distance = 2;
+  Point point = 3;
+}
+
+message SearchResponse {
+  float distance = 1;
+  Point points = 2;
+}
+
+message ListRequest {
+  string prefix = 1;
+}
+
+message DeleteRequest {
+  string name = 1;
+  repeated Point points = 2;
+}
+
+message DeleteResponse {
+  int32 deleted_count = 1;
+}
+
+message DescribeRequest {
+  string name = 1;
+}
+
+message DescribeResponse {
+  string name = 1;
+  int32 item_count = 2;
+}
