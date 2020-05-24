@@ -24,11 +24,39 @@ struct Opt {
     file_name: String,
 }
 
+use crossbeam_channel::{bounded, unbounded};
+use embedding_db::help::Container;
+use rayon::prelude::*;
+use std::sync::mpsc::channel;
+use std::sync::mpsc::sync_channel;
+use std::sync::{Arc, RwLock};
+use std::thread::spawn;
+
 fn main() -> anyhow::Result<()> {
     // let opt = Opt::from_args();
     // println!("{:?}", opt);
 
-    let thing = Sky::default();
-    thing.add(vec![1.0])?;
+    let mut thing = Arc::new(RwLock::new(Sky::default()));
+    {
+        let mut mut_thing = thing.write().unwrap();
+        for _ in 0..100 {
+            mut_thing.add("some-name".to_string(), vec![1.0, 2.0, 3.0])?;
+        }
+    }
+    let (sender, receiver) = bounded(1);
+
+    let another_thing = thing.clone();
+    spawn(move || {
+        another_thing.read().unwrap().query(
+            "some-name".to_string(),
+            10.0,
+            vec![1.0, 2.0, 3.0],
+            sender,
+        )
+    });
+
+    let mut thing = receiver.iter();
+    thing.next();
+    drop(receiver);
     Ok(())
 }

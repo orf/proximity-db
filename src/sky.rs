@@ -1,44 +1,73 @@
-use crate::constellation::Constellation;
-use nalgebra::U64;
+use crate::constellations::{Constellation, VecConstellation};
+use crate::SupportedSizes;
+use crossbeam_channel::{unbounded, Receiver, Sender};
+use nalgebra::{ComplexField, DimName, Point, RealField, Vector1, VectorN, U1, U3, U64};
 use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
+use rayon::prelude::*;
 use std::collections::HashMap;
+use std::sync::mpsc::SyncSender;
+use std::sync::{Arc, RwLock};
+use std::thread::spawn;
 use thiserror::Error;
 use typenum::{U128, U256, U512};
 
 #[derive(Error, Debug)]
 pub enum SkyError {
-    #[error("A vector with length {} is not valid.", .0.number)]
+    #[error("A vector with length {} is not valid. Valid sizes: {}", .0.number, SupportedSizes::possible_choices())]
     InvalidSize(#[from] TryFromPrimitiveError<SupportedSizes>),
-}
-
-#[derive(TryFromPrimitive)]
-#[repr(usize)]
-pub enum SupportedSizes {
-    U64 = 64,
-    U128 = 128,
-    U256 = 256,
-    U512 = 512,
+    #[error("A constellation with the name {0} and size {1} does not exist.")]
+    NotFound(String, usize),
 }
 
 // A sky contains lots of constellations?
 // <S: Into<String>>
 #[derive(Default)]
 pub struct Sky {
-    u64: HashMap<String, Constellation<f32, U64>>,
-    u128: HashMap<String, Constellation<f32, U128>>,
-    u256: HashMap<String, Constellation<f32, U256>>,
-    u512: HashMap<String, Constellation<f32, U512>>,
+    // For debugging!
+    u3: HashMap<String, Arc<RwLock<VecConstellation<U3>>>>,
+    // u64: HashMap<String, VecConstellation<U64>>,
+    // u128: HashMap<String, VecConstellation<U128>>,
+    // u256: HashMap<String, VecConstellation<U256>>,
+    // u512: HashMap<String, VecConstellation<U512>>,
 }
 
-impl Sky {
-    pub fn add(&mut self, values: Vec<f32>) -> Result<(), SkyError> {
+impl<'a> Sky {
+    pub fn add(&mut self, name: String, values: Vec<f32>) -> Result<(), SkyError> {
         let supported_size = SupportedSizes::try_from_primitive(values.len())?;
+
         match supported_size {
-            SupportedSizes::U64 => self.u64.push(),
-            SupportedSizes::U128 => self.u128.push(),
-            SupportedSizes::U256 => self.u256.push(),
-            SupportedSizes::U512 => self.u512.push()
+            SupportedSizes::U3 => {
+                let point = Point::<f32, U3>::from_slice(&values);
+                let mut thing = self.u3.entry(name).or_default().write().unwrap();
+                thing.add_point(point);
+            }
         }
         return Ok(());
+    }
+
+    pub fn query(
+        &'a self,
+        name: String,
+        within_distance: f32,
+        values: Vec<f32>,
+        sender: Sender<(f32, Vec<f32>)>,
+    ) -> Result<(), SkyError> {
+        let supported_size = SupportedSizes::try_from_primitive(values.len())?;
+        match supported_size {
+            SupportedSizes::U3 => {
+                let constellation = self
+                    .u3
+                    .get(&name)
+                    .ok_or_else(|| SkyError::NotFound(name.clone(), values.len()))?
+                    .clone();
+                let point = Point::<f32, U3>::from_slice(&values);
+                spawn(move || {
+                    let reader = constellation.read().unwrap();
+                    reader.find_stream(point, within_distance, sender);
+                });
+            }
+        }
+
+        Ok(())
     }
 }
