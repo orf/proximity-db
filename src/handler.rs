@@ -7,8 +7,14 @@ use tonic::{Request, Response, Status};
 
 use crate::grpc::embedding_db_server::EmbeddingDb;
 
-#[derive(Debug, Default)]
 pub struct EmbeddingDBHandler {}
+
+impl EmbeddingDBHandler {
+    pub fn new() -> Self {
+        EmbeddingDBHandler {}
+    }
+}
+
 
 #[tonic::async_trait]
 impl EmbeddingDb for EmbeddingDBHandler {

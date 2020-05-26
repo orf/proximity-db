@@ -1,4 +1,4 @@
-use nalgebra::{DefaultAllocator, DimName, Point};
+use nalgebra::{DefaultAllocator, DimName, Point, Dim};
 
 mod vec;
 
@@ -24,7 +24,8 @@ where
         sender: Sender<(f32, Vec<f32>)>,
     );
 
-    fn size(&self) -> usize {
+    fn dimensions(&self) -> usize {
         DimX::dim()
     }
+    fn size(&self) -> usize;
 }

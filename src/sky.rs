@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use std::thread::spawn;
 use thiserror::Error;
+use typenum::U64;
 
 #[derive(Error, Debug)]
 pub enum SkyError {
@@ -23,7 +24,7 @@ pub enum SkyError {
 pub struct Sky {
     // For debugging!
     u6: HashMap<String, Arc<RwLock<VecConstellation<U6>>>>,
-    // u64: HashMap<String, VecConstellation<U64>>,
+    u64: HashMap<String, VecConstellation<U64>>,
     // u128: HashMap<String, VecConstellation<U128>>,
     // u256: HashMap<String, VecConstellation<U256>>,
     // u512: HashMap<String, VecConstellation<U512>>,

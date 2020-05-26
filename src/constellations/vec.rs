@@ -1,13 +1,13 @@
 use crate::constellations::Constellation;
 use crossbeam_channel::Sender;
 use nalgebra::allocator::Allocator;
-use nalgebra::{distance, DefaultAllocator, DimName, Point};
+use nalgebra::{distance, DefaultAllocator, DimName, Point, Dim};
 use rayon::prelude::*;
 
 /// A constellation contains lots of points.
 pub struct VecConstellation<DimX>
 where
-    DimX: DimName,
+    DimX: Dim + DimName,
     DefaultAllocator: Allocator<f32, DimX>,
 {
     points: Vec<Point<f32, DimX>>,
@@ -15,7 +15,7 @@ where
 
 impl<DimX> Default for VecConstellation<DimX>
 where
-    DimX: DimName,
+    DimX: Dim + DimName,
     DefaultAllocator: Allocator<f32, DimX>,
 {
     fn default() -> Self {
@@ -47,8 +47,6 @@ where
         within: f32,
         sender: Sender<(f32, Vec<f32>)>,
     ) {
-        // let the_limit = F::from_f32(within).unwrap();
-        // let (sender2, receiver) = channel();
         self.points
             .par_iter()
             .try_for_each_with(sender, |s, p| {
@@ -61,6 +59,10 @@ where
             })
             .ok();
     }
+
+    fn size(&self) -> usize {
+        std::mem::size_of::<Vec<Point<f32, DimX>>>() * self.len()
+    }
 }
 
 #[cfg(test)]
@@ -68,7 +70,21 @@ mod tests {
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
     use crossbeam_channel::bounded;
-    use nalgebra::U1;
+    use nalgebra::{U1};
+    use typenum::U8;
+
+    #[test]
+    fn test_len() {
+        let mut constellation = VecConstellation::<U1>::default();
+        assert_eq!(constellation.len(), 0);
+    }
+
+    #[test]
+    // fn test_size() {
+    //     let mut constellation = VecConstellation::<U1>::default();
+    //     // constellation.add_point(Point::<f32, U8>::new(1.0));
+    //     assert_eq!(constellation.size(), 1);
+    // }
 
     #[test]
     fn test_add() {
