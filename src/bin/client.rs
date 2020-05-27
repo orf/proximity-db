@@ -1,6 +1,10 @@
+use embedding_db::grpc::embedding_db_client::EmbeddingDbClient;
+use embedding_db::grpc::{AddRequest, SearchRequest};
 use embedding_db::sky::Sky;
-
+use rand::Rng;
 use structopt::StructOpt;
+use tonic::transport::channel;
+use tonic::Request;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "example", about = "An example of StructOpt usage.")]
@@ -29,35 +33,36 @@ use crossbeam_channel::bounded;
 use std::sync::{Arc, RwLock};
 use std::thread::spawn;
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let mut rng = rand::thread_rng();
+
     // let opt = Opt::from_args();
     // println!("{:?}", opt);
-
-    let thing = Arc::new(RwLock::new(Sky::default()));
-    {
-        let mut mut_thing = thing.write().unwrap();
-        for _ in 0..100 {
-            mut_thing.add("some-name".to_string(), vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0])?;
-        }
-    }
-    let (sender, receiver) = bounded(1);
-
-    let another_thing = thing.clone();
-    spawn(move || {
-        another_thing.read().unwrap().query(
-            "some-name".to_string(),
-            10.0,
-            vec![1.0, 2.0, 3.0, 3.0, 4.0, 1.0],
-            sender,
-        )
-    });
-
-    for thing in receiver.iter() {
-        println!("{:?}", thing);
+    let mut client = EmbeddingDbClient::connect("http://[::1]:50051").await?;
+    for _ in 0..1000 {
+        let random_items: Vec<f32> = (0..6).map(|_| rng.gen()).collect();
+        client
+            .add(Request::new(AddRequest {
+                name: "test".to_string(),
+                point: random_items,
+            }))
+            .await?;
     }
 
-    // let mut thing = receiver.iter();
-    // thing.next();
-    // drop(receiver);
+    let random_items: Vec<f32> = (0..6).map(|_| rng.gen()).collect();
+    let mut stream = client.search(Request::new(SearchRequest {
+        distance: 0.2,
+        name: "test".to_string(),
+        point: random_items
+    })).await?;
+
+    let mut inbound = stream.into_inner();
+
+    println!("Reading...");
+    while let Some(feature) = inbound.message().await? {
+        println!("NOTE = {:?}", feature);
+    }
+
     Ok(())
 }

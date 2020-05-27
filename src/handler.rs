@@ -6,29 +6,59 @@ use tokio::sync::mpsc;
 use tonic::{Request, Response, Status};
 
 use crate::grpc::embedding_db_server::EmbeddingDb;
+use crate::sky::Sky;
+use crossbeam_channel::unbounded;
+use std::sync::Arc;
 
-pub struct EmbeddingDBHandler {}
+#[derive(Default)]
+pub struct EmbeddingDBHandler {
+    sky: Arc<Sky>,
+}
 
 impl EmbeddingDBHandler {
-    pub fn new() -> Self {
-        EmbeddingDBHandler {}
+    pub fn new(sky: Sky) -> Self {
+        EmbeddingDBHandler { sky: sky.into() }
     }
 }
 
-
 #[tonic::async_trait]
 impl EmbeddingDb for EmbeddingDBHandler {
-    type SearchStream = mpsc::Receiver<Result<SearchResponse, Status>>;
+    type SearchStream = mpsc::UnboundedReceiver<Result<SearchResponse, Status>>;
 
     async fn search(
         &self,
-        _request: Request<SearchRequest>,
+        request: Request<SearchRequest>,
     ) -> Result<Response<Self::SearchStream>, Status> {
-        unimplemented!()
+        let search_request = request.into_inner();
+        let sky_reference = self.sky.clone();
+
+        let (tx, rx) = mpsc::unbounded_channel();
+
+        tokio::task::spawn_blocking(move || {
+            let (sync_sender, sync_receiver) = unbounded();
+            if let Err(e) = sky_reference.query(
+                search_request.name,
+                search_request.distance,
+                search_request.point,
+                sync_sender,
+            ) {
+                tx.send(Err(e.into())).ok();
+            }
+            for (distance, point) in sync_receiver.iter() {
+                if let Err(_) = tx.send(Ok(SearchResponse { distance, point })) {
+                    break;
+                }
+            }
+        });
+
+        Ok(Response::new(rx))
     }
 
-    async fn add(&self, _request: Request<AddRequest>) -> Result<Response<AddResponse>, Status> {
-        unimplemented!()
+    async fn add(&self, request: Request<AddRequest>) -> Result<Response<AddResponse>, Status> {
+        let add_request = request.into_inner();
+        let sky = self.sky.clone();
+        sky.add(add_request.name, add_request.point)?;
+        Ok(Response::new(AddResponse {}))
     }
 
     async fn delete(

@@ -1,6 +1,6 @@
 use criterion::measurement::WallTime;
 use criterion::{
-    black_box, criterion_group, criterion_main, BenchmarkGroup, BenchmarkId, Criterion, Throughput,
+    criterion_group, criterion_main, BenchmarkGroup, BenchmarkId, Criterion, Throughput,
 };
 use nalgebra::allocator::Allocator;
 use nalgebra::U64;
@@ -38,10 +38,14 @@ where
             BenchmarkId::new(format!("{}", DimX::dim()), collection.len()),
             |b| {
                 return pool.install(|| {
-                    b.iter(|| {
-                        let (send, _recv) = unbounded();
-                        black_box(collection.find_stream(&our_point, 0.1, send));
-                    });
+                    b.iter_batched(
+                        || unbounded(),
+                        |(send, recv)| {
+                            collection.find_stream(&our_point, 0.0, send);
+                            recv
+                        },
+                        criterion::BatchSize::PerIteration,
+                    );
                 });
             },
         );

@@ -1,14 +1,14 @@
 use crate::constellations::{Constellation, VecConstellation};
-use crate::SupportedSizes;
+use crate::{Point32, SupportedSizes};
 use crossbeam_channel::Sender;
-use nalgebra::{Point, U6};
+use dashmap::DashMap;
+use nalgebra::U6;
 use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
-use std::collections::HashMap;
 
 use std::sync::{Arc, RwLock};
 use std::thread::spawn;
 use thiserror::Error;
-use typenum::U64;
+use tonic::{Code, Status};
 
 #[derive(Error, Debug)]
 pub enum SkyError {
@@ -18,27 +18,38 @@ pub enum SkyError {
     NotFound(String, usize),
 }
 
+impl From<SkyError> for Status {
+    fn from(other: SkyError) -> Self {
+        let msg = format!("{}", other);
+        match other {
+            SkyError::InvalidSize(_) => Status::new(Code::InvalidArgument, msg),
+            SkyError::NotFound(_, _) => Status::new(Code::NotFound, msg),
+        }
+    }
+}
+
 // A sky contains lots of constellations?
 // <S: Into<String>>
 #[derive(Default)]
 pub struct Sky {
     // For debugging!
-    u6: HashMap<String, Arc<RwLock<VecConstellation<U6>>>>,
-    u64: HashMap<String, VecConstellation<U64>>,
+    u6: DashMap<String, Arc<RwLock<VecConstellation<U6>>>>,
+    // u64: HashMap<String, VecConstellation<U64>>,
     // u128: HashMap<String, VecConstellation<U128>>,
     // u256: HashMap<String, VecConstellation<U256>>,
     // u512: HashMap<String, VecConstellation<U512>>,
 }
 
 impl<'a> Sky {
-    pub fn add(&mut self, name: String, values: Vec<f32>) -> Result<(), SkyError> {
+    pub fn add(&self, name: String, values: Vec<f32>) -> Result<(), SkyError> {
         let supported_size = SupportedSizes::try_from_primitive(values.len())?;
 
         match supported_size {
             SupportedSizes::U6 => {
-                let point = Point::<f32, U6>::from_slice(&values);
-                let mut thing = self.u6.entry(name).or_default().write().unwrap();
-                thing.add_point(point);
+                let point = Point32::<U6>::from_slice(&values);
+                let constellation_rw = self.u6.entry(name).or_default();
+                let mut writer = constellation_rw.write().unwrap();
+                writer.add_point(point);
             }
         }
         return Ok(());
@@ -59,7 +70,7 @@ impl<'a> Sky {
                     .get(&name)
                     .ok_or_else(|| SkyError::NotFound(name.clone(), values.len()))?
                     .clone();
-                let point = Point::<f32, U6>::from_slice(&values);
+                let point = Point32::<U6>::from_slice(&values);
                 spawn(move || {
                     let reader = constellation.read().unwrap();
                     reader.find_stream(&point, within_distance, sender);
@@ -79,7 +90,7 @@ mod tests {
 
     #[test]
     fn test_add() {
-        let mut sky = Sky::default();
+        let sky = Sky::default();
         sky.add("hello".into(), vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
             .unwrap();
     }
@@ -87,7 +98,7 @@ mod tests {
     #[test]
     fn test_query() {
         let values = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
-        let mut sky = Sky::default();
+        let sky = Sky::default();
         sky.add("hello".into(), values.clone()).unwrap();
         let (sender, receiver) = bounded(1);
         sky.query("hello".into(), 0.0, values.clone(), sender)

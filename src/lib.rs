@@ -4,7 +4,10 @@ pub mod handler;
 pub mod sky;
 
 use enum_iterator::IntoEnumIterator;
+use nalgebra::Point;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
+
+pub type Point32<DimX> = Point<f32, DimX>;
 
 #[derive(TryFromPrimitive, IntoPrimitive, IntoEnumIterator)]
 #[repr(usize)]

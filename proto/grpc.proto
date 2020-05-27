@@ -11,13 +11,9 @@ service EmbeddingDB {
   rpc DescribeGroup(DescribeRequest) returns (DescribeResponse) {}
 }
 
-message Point {
-  repeated float point = 1;
-}
-
 message AddRequest {
   string name = 1;
-  repeated Point points = 2;
+  repeated float point = 2;
 }
 
 message AddResponse {}
@@ -25,12 +21,12 @@ message AddResponse {}
 message SearchRequest {
   string name = 1;
   float distance = 2;
-  Point point = 3;
+  repeated float point = 3;
 }
 
 message SearchResponse {
   float distance = 1;
-  Point points = 2;
+  repeated float point = 2;
 }
 
 message ListRequest {
@@ -39,7 +35,7 @@ message ListRequest {
 
 message DeleteRequest {
   string name = 1;
-  repeated Point points = 2;
+  repeated float point = 2;
 }
 
 message DeleteResponse {
