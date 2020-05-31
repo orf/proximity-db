@@ -1,65 +1,169 @@
 use embedding_db::grpc::embedding_db_client::EmbeddingDbClient;
-use embedding_db::grpc::{AddRequest, Point as GrpcPoint, SearchRequest};
+use embedding_db::grpc::{AddRequest, ListRequest, Point as GrpcPoint}; //, SearchRequest};
+use futures::StreamExt;
+use human_format::{Formatter, Scales};
+use rand::distributions::Standard;
 use rand::Rng;
+use std::time::Instant;
 use structopt::StructOpt;
+use tonic::transport::Channel;
 use tonic::Request;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "example", about = "An example of StructOpt usage.")]
-struct Opt {
-    /// Activate debug mode
-    // short and long flags (-d, --debug) will be deduced from the field's name
-    #[structopt(short, long)]
-    debug: bool,
+enum Opt {
+    Fill {
+        name: String,
+        #[structopt(short, long)]
+        dimensions: usize,
+        #[structopt(short, long)]
+        number: usize,
+        #[structopt(short, long, default_value = "4")]
+        parallel: usize,
+        #[structopt(short, long, default_value = "10")]
+        batch_size: usize,
+    },
 
-    /// Set speed
-    // we don't want to name it "speed", need to look smart
-    #[structopt(short = "v", long = "velocity", default_value = "42")]
-    speed: f64,
-
-    /// Where to write the output: to `stdout` or `file`
-    #[structopt(short)]
-    out_type: String,
-
-    /// File name: only required when `out` is set to `file`
-    #[structopt(name = "FILE", required_if("out_type", "file"))]
-    file_name: String,
+    List {
+        #[structopt(default_value = "")]
+        prefix: String,
+    },
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let mut rng = rand::thread_rng();
+    let opt = Opt::from_args();
+    let client = EmbeddingDbClient::connect("http://[::1]:50051").await?;
+    match opt {
+        Opt::Fill {
+            name,
+            dimensions,
+            number,
+            parallel,
+            batch_size,
+        } => fill(client, name, dimensions, number, parallel, batch_size).await,
+        Opt::List { prefix } => list(client, prefix).await,
+    }
+}
 
-    // let opt = Opt::from_args();
-    // println!("{:?}", opt);
-    let mut client = EmbeddingDbClient::connect("http://[::1]:50051").await?;
-    for _ in 0..100 {
-        let coords: Vec<f32> = (0..6).map(|_| rng.gen()).collect();
-        client
-            .add(Request::new(AddRequest {
-                name: "test".to_string(),
-                points: vec![GrpcPoint { coords }],
-            }))
-            .await?;
+async fn fill(
+    client: EmbeddingDbClient<Channel>,
+    name: String,
+    dimensions: usize,
+    number: usize,
+    parallel: usize,
+    batch_size: usize,
+) -> anyhow::Result<()> {
+    let rng = rand::thread_rng();
+
+    // Create our random points
+    let mut items: Vec<Vec<GrpcPoint>> = vec![];
+    for _ in (0..number).step_by(batch_size) {
+        items.push(
+            (0..batch_size)
+                .map(|_| GrpcPoint {
+                    coords: rng.sample_iter(Standard).take(dimensions).collect(),
+                })
+                .collect(),
+        );
     }
 
-    let random_items: Vec<f32> = (0..6).map(|_| rng.gen()).collect();
-    let stream = client
-        .search(Request::new(SearchRequest {
-            distance: 1.0,
-            name: "test".to_string(),
-            point: Some(GrpcPoint {
-                coords: random_items,
-            }),
-        }))
-        .await?;
+    let mut request_futures = futures::stream::iter(items.into_iter().map(|batch| {
+        async {
+            // This is super cheap, see https://github.com/hyperium/tonic/issues/285
+            let mut cloned_client = client.clone();
+            cloned_client
+                .add(Request::new(AddRequest {
+                    name: name.clone(),
+                    points: batch,
+                }))
+                .await?;
+            // See https://github.com/rust-lang/rust/issues/63502#issuecomment-520647948
+            Ok::<(), anyhow::Error>(())
+        }
+    }))
+    .buffer_unordered(parallel);
 
-    let mut inbound = stream.into_inner();
-
-    println!("Reading...");
-    while let Some(feature) = inbound.message().await? {
-        println!("NOTE = {:?}", feature);
+    println!(
+        "Sending {} batches of {} points, with {} parallel requests",
+        number, batch_size, parallel
+    );
+    let started = Instant::now();
+    while let Some(feature) = request_futures.next().await {
+        feature?;
     }
-
+    let elapsed = started.elapsed();
+    println!("Completed in {}ms", elapsed.as_millis());
+    println!(
+        "{} adds per second",
+        (number as u128 / elapsed.as_millis()) * 1000
+    );
     Ok(())
 }
+
+async fn list(mut client: EmbeddingDbClient<Channel>, prefix: String) -> anyhow::Result<()> {
+    let mut bytes_formatter = Formatter::new();
+    bytes_formatter.with_scales(Scales::Binary());
+
+    let mut count_formatter = Formatter::new();
+    count_formatter.with_decimals(0);
+
+    let result = client.list(Request::new(ListRequest { prefix })).await?;
+    let mut result_stream = result.into_inner();
+    while let Some(feature) = result_stream.message().await? {
+        println!(" - name : {}", feature.name);
+        println!("   dims : {}", feature.dimensions);
+        println!("   count: {}", count_formatter.format(feature.count as f64));
+        println!(
+            "   size : {}",
+            bytes_formatter.format(feature.memory_size as f64)
+        );
+    }
+    Ok(())
+}
+
+//
+// let items : Vec<Vec<Vec<f32>>> = (0..count).step_by(batch_size).map(|_| ).collect();
+//
+// let start = Instant::now();
+//
+// let futures = items.chunks(batch_size).map(|coords| {
+//     client.add(Request::new(AddRequest { name: name.clone(), points: vec![GrpcPoint { coords }] }))
+// });
+
+// for _ in 0..count {
+//     client.add(Request::new(
+//         AddRequest {
+//             name,
+//             points: vec![GrpcPoint { coords }]
+//         }
+//     ))
+// }
+
+// for _ in 0..100 {
+//     let coords: Vec<f32> = (0..6).map(|_| rng.gen()).collect();
+//     client
+//         .add(Request::new(AddRequest {
+//             name: "test".to_string(),
+//             points: vec![GrpcPoint { coords }],
+//         }))
+//         .await?;
+// }
+//
+// let random_items: Vec<f32> = (0..6).map(|_| rng.gen()).collect();
+// let stream = client
+//     .search(Request::new(SearchRequest {
+//         distance: 1.0,
+//         name: "test".to_string(),
+//         point: Some(GrpcPoint {
+//             coords: random_items,
+//         }),
+//     }))
+//     .await?;
+//
+// let mut inbound = stream.into_inner();
+//
+// println!("Reading...");
+// while let Some(feature) = inbound.message().await? {
+//     println!("NOTE = {:?}", feature);
+// }

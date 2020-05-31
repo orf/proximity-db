@@ -28,7 +28,8 @@ anyhow = "1.0.31"
 thiserror = "1.0.19"
 rand = "0.7.3"
 crossbeam-channel = "0.4.2"
-itertools = "0.9.0"
+futures = "0.3.5"
+human_format = "1.0.3"
 
 [dev-dependencies]
 criterion = "0.3.2"

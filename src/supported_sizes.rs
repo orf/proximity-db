@@ -1,11 +1,14 @@
 use crate::constellation::{Constellation, VecConstellation};
 use enum_iterator::IntoEnumIterator;
 use nalgebra::{U6, U64};
-use num_enum::{IntoPrimitive, TryFromPrimitive};
+use num_enum::{IntoPrimitive, TryFromPrimitive, TryFromPrimitiveError};
 
+use std::num::ParseIntError;
+use std::str::FromStr;
+use thiserror::Error;
 use typenum::{U128, U256, U512};
 
-#[derive(TryFromPrimitive, IntoPrimitive, IntoEnumIterator)]
+#[derive(TryFromPrimitive, IntoPrimitive, IntoEnumIterator, Debug)]
 #[repr(usize)]
 pub enum SupportedSize {
     // For debugging
@@ -36,6 +39,23 @@ impl Into<Box<dyn Constellation>> for SupportedSize {
             SupportedSize::U256 => Box::from(VecConstellation::<U256>::default()),
             SupportedSize::U512 => Box::from(VecConstellation::<U512>::default()),
         }
+    }
+}
+
+#[derive(Error, Debug)]
+pub enum SupportedSizeConversionError {
+    #[error(transparent)]
+    ParseIntError(#[from] ParseIntError),
+    #[error("Value {} is not valid. Valid values: {}", .0.number, SupportedSize::possible_choices())]
+    InvalidSize(#[from] TryFromPrimitiveError<SupportedSize>),
+}
+
+impl FromStr for SupportedSize {
+    type Err = SupportedSizeConversionError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let target: usize = s.parse()?;
+        return Ok(SupportedSize::try_from_primitive(target)?);
     }
 }
 

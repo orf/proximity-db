@@ -57,6 +57,6 @@ message DescribeRequest {
 message DescribeResponse {
   string name = 1;
   uint64 dimensions = 2;
-  uint64 length = 3;
+  uint64 count = 3;
   uint64 memory_size = 4;
 }

@@ -3,16 +3,11 @@ use crate::SupportedSize;
 use dashmap::DashMap;
 use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
 
-use itertools::Itertools;
 use thiserror::Error;
 use tonic::{Code, Status};
 
 #[derive(Error, Debug)]
 pub enum SkyError {
-    #[error("No points to add")]
-    NoElementsToAdd,
-    #[error("All vectors must have an equal size")]
-    NotAllEqual,
     #[error("A vector with length {} is not valid. Valid sizes: {}", .0.number, SupportedSize::possible_choices())]
     InvalidSize(#[from] TryFromPrimitiveError<SupportedSize>),
     #[error(
@@ -31,8 +26,6 @@ impl From<SkyError> for Status {
     fn from(other: SkyError) -> Self {
         let msg = format!("{}", other);
         match other {
-            SkyError::NoElementsToAdd => Status::new(Code::InvalidArgument, msg),
-            SkyError::NotAllEqual => Status::new(Code::InvalidArgument, msg),
             SkyError::InvalidSize(..) => Status::new(Code::InvalidArgument, msg),
             SkyError::NotFound(..) => Status::new(Code::NotFound, msg),
             SkyError::IncorrectSize { .. } => Status::new(Code::InvalidArgument, msg),
@@ -53,17 +46,23 @@ impl<'a> Sky {
             return Ok(());
         }
 
-        // If not all items are the same length, return an error
-        if !values.iter().map(|i| i.len()).all_equal() {
-            return Err(SkyError::NotAllEqual);
-        }
-
         let supported_size = SupportedSize::try_from_primitive(values.first().unwrap().len())?;
 
         let constellation_rw = self
             .constellations
-            .entry(name)
+            .entry(name.clone())
             .or_insert_with(|| supported_size.into());
+
+        let expected = constellation_rw.dimensions();
+        for value in &values {
+            if value.len() != expected {
+                return Err(SkyError::IncorrectSize {
+                    name: name.clone(),
+                    expected,
+                    given: value.len(),
+                });
+            }
+        }
 
         constellation_rw.add_points(values);
         return Ok(());
@@ -117,7 +116,7 @@ impl<'a> Sky {
 
 pub struct Metrics {
     pub name: String,
-    pub length: usize,
+    pub count: usize,
     pub dimensions: usize,
     pub memory_size: usize,
 }
@@ -126,7 +125,7 @@ impl Metrics {
     pub fn from_constellation(name: String, constellation: &Box<dyn Constellation>) -> Self {
         Self {
             name,
-            length: constellation.len(),
+            count: constellation.count(),
             dimensions: constellation.dimensions(),
             memory_size: constellation.memory_size(),
         }

@@ -112,7 +112,7 @@ impl Into<DescribeResponse> for Metrics {
     fn into(self) -> DescribeResponse {
         DescribeResponse {
             name: self.name,
-            length: self.length as u64,
+            count: self.count as u64,
             dimensions: self.dimensions as u64,
             memory_size: self.memory_size as u64,
         }

@@ -33,9 +33,9 @@ where
         collection.add_points(&random_points);
 
         let our_point = VectorN::new_random().into();
-        group.throughput(Throughput::Elements(collection.len() as u64));
+        group.throughput(Throughput::Elements(collection.count() as u64));
         group.bench_function(
-            BenchmarkId::new(format!("{}", DimX::dim()), collection.len()),
+            BenchmarkId::new(format!("{}", DimX::dim()), collection.count()),
             |b| {
                 return pool.install(|| {
                     b.iter_batched(

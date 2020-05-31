@@ -67,7 +67,7 @@ where
         return QueryIterator { receiver: rx };
     }
 
-    fn len(&self) -> usize {
+    fn count(&self) -> usize {
         self.points.read().unwrap().len()
     }
 
@@ -76,7 +76,7 @@ where
     }
 
     fn memory_size(&self) -> usize {
-        mem::size_of::<Point32<DimX>>() * self.len()
+        mem::size_of::<Point32<DimX>>() * self.count()
     }
 }
 
@@ -89,7 +89,7 @@ mod tests {
     #[test]
     fn test_len() {
         let constellation = VecConstellation::<U1>::default();
-        assert_eq!(constellation.len(), 0);
+        assert_eq!(constellation.count(), 0);
     }
 
     #[test]
@@ -107,7 +107,7 @@ mod tests {
         let mut constellation = VecConstellation::<U1>::default();
         let points: Vec<_> = vec![Point32::<U1>::new(1.0), Point32::<U1>::new(1.0)];
         constellation.add_points(&points);
-        assert_eq!(constellation.len(), 2);
+        assert_eq!(constellation.count(), 2);
     }
 
     #[test]
