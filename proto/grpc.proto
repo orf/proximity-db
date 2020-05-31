@@ -6,14 +6,20 @@ service EmbeddingDB {
   rpc Add(AddRequest) returns (AddResponse) {}
   rpc Delete(DeleteRequest) returns (DeleteResponse) {}
 
-  // Meta-requests
-  rpc ListGroups(ListRequest) returns (stream DescribeResponse) {}
-  rpc DescribeGroup(DescribeRequest) returns (DescribeResponse) {}
+  // Meta information
+  rpc List(ListRequest) returns (stream DescribeResponse) {}
+  rpc Describe(DescribeRequest) returns (DescribeResponse) {}
+}
+
+// Later: make names include the size in the prefix: `64/abcdef`, rather than implicit auto-detection.
+
+message Point {
+  repeated float coords = 1;
 }
 
 message AddRequest {
   string name = 1;
-  repeated float point = 2;
+  repeated Point points = 2;
 }
 
 message AddResponse {}
@@ -21,25 +27,27 @@ message AddResponse {}
 message SearchRequest {
   string name = 1;
   float distance = 2;
-  repeated float point = 3;
+  Point point = 3;
 }
 
 message SearchResponse {
   float distance = 1;
-  repeated float point = 2;
-}
-
-message ListRequest {
-  string prefix = 1;
+  Point point = 2;
 }
 
 message DeleteRequest {
   string name = 1;
-  repeated float point = 2;
+  repeated Point points = 2;
 }
 
 message DeleteResponse {
   int32 deleted_count = 1;
+}
+
+// Meta information
+
+message ListRequest {
+  string prefix = 1;
 }
 
 message DescribeRequest {
@@ -48,5 +56,7 @@ message DescribeRequest {
 
 message DescribeResponse {
   string name = 1;
-  int32 item_count = 2;
+  uint64 dimensions = 2;
+  uint64 length = 3;
+  uint64 memory_size = 4;
 }

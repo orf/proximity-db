@@ -1,41 +1,7 @@
-pub mod constellations;
+pub mod constellation;
 pub mod grpc;
 pub mod handler;
 pub mod sky;
+pub mod supported_sizes;
 
-use enum_iterator::IntoEnumIterator;
-use nalgebra::Point;
-use num_enum::{IntoPrimitive, TryFromPrimitive};
-
-pub type Point32<DimX> = Point<f32, DimX>;
-
-#[derive(TryFromPrimitive, IntoPrimitive, IntoEnumIterator)]
-#[repr(usize)]
-pub enum SupportedSizes {
-    // For debugging
-    U6 = 6,
-    //
-    // U64 = 64,
-    // U128 = 128,
-    // U256 = 256,
-    // U512 = 512,
-}
-
-impl SupportedSizes {
-    fn possible_choices() -> String {
-        return SupportedSizes::into_enum_iter().fold(String::new(), |a, b| {
-            let value: usize = b.into();
-            format!("{}{}, ", a, value)
-        });
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_possible_choices() {
-        assert_eq!(SupportedSizes::possible_choices(), "6, ");
-    }
-}
+pub use supported_sizes::SupportedSize;

@@ -7,7 +7,7 @@ use nalgebra::U64;
 use nalgebra::{DefaultAllocator, DimName, VectorN};
 
 use crossbeam_channel::unbounded;
-use embedding_db::constellations::{Constellation, VecConstellation};
+use embedding_db::constellation::{Constellation, VecConstellation};
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
 use std::time::Duration;

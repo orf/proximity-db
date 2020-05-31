@@ -1,29 +1,41 @@
-use crate::constellations::{Constellation, VecConstellation};
-use crate::{Point32, SupportedSizes};
-use crossbeam_channel::Sender;
+use crate::constellation::{Constellation, QueryIterator};
+use crate::SupportedSize;
 use dashmap::DashMap;
-use nalgebra::U6;
 use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
 
-use std::sync::{Arc, RwLock};
-use std::thread::spawn;
+use itertools::Itertools;
 use thiserror::Error;
 use tonic::{Code, Status};
 
 #[derive(Error, Debug)]
 pub enum SkyError {
-    #[error("A vector with length {} is not valid. Valid sizes: {}", .0.number, SupportedSizes::possible_choices())]
-    InvalidSize(#[from] TryFromPrimitiveError<SupportedSizes>),
-    #[error("A constellation with the name {0} and size {1} does not exist.")]
-    NotFound(String, usize),
+    #[error("No points to add")]
+    NoElementsToAdd,
+    #[error("All vectors must have an equal size")]
+    NotAllEqual,
+    #[error("A vector with length {} is not valid. Valid sizes: {}", .0.number, SupportedSize::possible_choices())]
+    InvalidSize(#[from] TryFromPrimitiveError<SupportedSize>),
+    #[error(
+        "Constellation {name:?} requires vectors with length {expected:?}, but you gave {given:?}"
+    )]
+    IncorrectSize {
+        name: String,
+        expected: usize,
+        given: usize,
+    },
+    #[error("A constellation with the name {0} does not exist.")]
+    NotFound(String),
 }
 
 impl From<SkyError> for Status {
     fn from(other: SkyError) -> Self {
         let msg = format!("{}", other);
         match other {
-            SkyError::InvalidSize(_) => Status::new(Code::InvalidArgument, msg),
-            SkyError::NotFound(_, _) => Status::new(Code::NotFound, msg),
+            SkyError::NoElementsToAdd => Status::new(Code::InvalidArgument, msg),
+            SkyError::NotAllEqual => Status::new(Code::InvalidArgument, msg),
+            SkyError::InvalidSize(..) => Status::new(Code::InvalidArgument, msg),
+            SkyError::NotFound(..) => Status::new(Code::NotFound, msg),
+            SkyError::IncorrectSize { .. } => Status::new(Code::InvalidArgument, msg),
         }
     }
 }
@@ -32,53 +44,92 @@ impl From<SkyError> for Status {
 // <S: Into<String>>
 #[derive(Default)]
 pub struct Sky {
-    // For debugging!
-    u6: DashMap<String, Arc<RwLock<VecConstellation<U6>>>>,
-    // u64: HashMap<String, VecConstellation<U64>>,
-    // u128: HashMap<String, VecConstellation<U128>>,
-    // u256: HashMap<String, VecConstellation<U256>>,
-    // u512: HashMap<String, VecConstellation<U512>>,
+    constellations: DashMap<String, Box<dyn Constellation>>,
 }
 
 impl<'a> Sky {
-    pub fn add(&self, name: String, values: Vec<f32>) -> Result<(), SkyError> {
-        let supported_size = SupportedSizes::try_from_primitive(values.len())?;
-
-        match supported_size {
-            SupportedSizes::U6 => {
-                let point = Point32::<U6>::from_slice(&values);
-                let constellation_rw = self.u6.entry(name).or_default();
-                let mut writer = constellation_rw.write().unwrap();
-                writer.add_point(point);
-            }
+    pub fn add(&self, name: String, values: Vec<Vec<f32>>) -> Result<(), SkyError> {
+        if !values.len() == 0 {
+            return Ok(());
         }
+
+        // If not all items are the same length, return an error
+        if !values.iter().map(|i| i.len()).all_equal() {
+            return Err(SkyError::NotAllEqual);
+        }
+
+        let supported_size = SupportedSize::try_from_primitive(values.first().unwrap().len())?;
+
+        let constellation_rw = self
+            .constellations
+            .entry(name)
+            .or_insert_with(|| supported_size.into());
+
+        constellation_rw.add_points(values);
         return Ok(());
     }
 
     pub fn query(
-        &'a self,
+        &self,
         name: String,
         within_distance: f32,
         values: Vec<f32>,
-        sender: Sender<(f32, Vec<f32>)>,
-    ) -> Result<(), SkyError> {
-        let supported_size = SupportedSizes::try_from_primitive(values.len())?;
-        match supported_size {
-            SupportedSizes::U6 => {
-                let constellation = self
-                    .u6
-                    .get(&name)
-                    .ok_or_else(|| SkyError::NotFound(name.clone(), values.len()))?
-                    .clone();
-                let point = Point32::<U6>::from_slice(&values);
-                spawn(move || {
-                    let reader = constellation.read().unwrap();
-                    reader.find_stream(&point, within_distance, sender);
-                });
-            }
+    ) -> Result<QueryIterator, SkyError> {
+        let constellation = self
+            .constellations
+            .get(&name)
+            .ok_or_else(|| SkyError::NotFound(name.clone()))?;
+
+        if constellation.dimensions() != values.len() {
+            return Err(SkyError::IncorrectSize {
+                name,
+                expected: constellation.dimensions(),
+                given: values.len(),
+            });
         }
 
-        Ok(())
+        Ok(constellation.find(values, within_distance))
+    }
+
+    pub fn list(&self, prefix: &String) -> Vec<Metrics> {
+        self.constellations
+            .iter()
+            .filter_map(|kv| {
+                if kv.key().starts_with(prefix) {
+                    let value = kv.value();
+                    Some(Metrics::from_constellation(kv.key().clone(), value))
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+
+    pub fn describe(&self, name: &String) -> Result<Metrics, SkyError> {
+        let constellation = self
+            .constellations
+            .get(name)
+            .ok_or_else(|| SkyError::NotFound(name.clone()))?;
+
+        return Ok(Metrics::from_constellation(name.clone(), &constellation));
+    }
+}
+
+pub struct Metrics {
+    pub name: String,
+    pub length: usize,
+    pub dimensions: usize,
+    pub memory_size: usize,
+}
+
+impl Metrics {
+    pub fn from_constellation(name: String, constellation: &Box<dyn Constellation>) -> Self {
+        Self {
+            name,
+            length: constellation.len(),
+            dimensions: constellation.dimensions(),
+            memory_size: constellation.memory_size(),
+        }
     }
 }
 
@@ -86,12 +137,11 @@ impl<'a> Sky {
 mod tests {
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
-    use crossbeam_channel::bounded;
 
     #[test]
     fn test_add() {
         let sky = Sky::default();
-        sky.add("hello".into(), vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+        sky.add("hello".into(), vec![vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]])
             .unwrap();
     }
 
@@ -99,12 +149,10 @@ mod tests {
     fn test_query() {
         let values = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
         let sky = Sky::default();
-        sky.add("hello".into(), values.clone()).unwrap();
-        let (sender, receiver) = bounded(1);
-        sky.query("hello".into(), 0.0, values.clone(), sender)
-            .unwrap();
+        sky.add("hello".into(), vec![values.clone()]).unwrap();
+        let receiver = sky.query("hello".into(), 0.0, values.clone()).unwrap();
 
-        let items: Vec<(f32, Vec<f32>)> = receiver.iter().collect();
+        let items: Vec<(f32, Vec<f32>)> = receiver.collect();
         assert_eq!(items, vec![(0.0, values)]);
     }
 }

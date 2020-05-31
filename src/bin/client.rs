@@ -1,9 +1,7 @@
 use embedding_db::grpc::embedding_db_client::EmbeddingDbClient;
-use embedding_db::grpc::{AddRequest, SearchRequest};
-use embedding_db::sky::Sky;
+use embedding_db::grpc::{AddRequest, Point as GrpcPoint, SearchRequest};
 use rand::Rng;
 use structopt::StructOpt;
-use tonic::transport::channel;
 use tonic::Request;
 
 #[derive(Debug, StructOpt)]
@@ -28,11 +26,6 @@ struct Opt {
     file_name: String,
 }
 
-use crossbeam_channel::bounded;
-
-use std::sync::{Arc, RwLock};
-use std::thread::spawn;
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let mut rng = rand::thread_rng();
@@ -40,22 +33,26 @@ async fn main() -> anyhow::Result<()> {
     // let opt = Opt::from_args();
     // println!("{:?}", opt);
     let mut client = EmbeddingDbClient::connect("http://[::1]:50051").await?;
-    for _ in 0..1000 {
-        let random_items: Vec<f32> = (0..6).map(|_| rng.gen()).collect();
+    for _ in 0..100 {
+        let coords: Vec<f32> = (0..6).map(|_| rng.gen()).collect();
         client
             .add(Request::new(AddRequest {
                 name: "test".to_string(),
-                point: random_items,
+                points: vec![GrpcPoint { coords }],
             }))
             .await?;
     }
 
     let random_items: Vec<f32> = (0..6).map(|_| rng.gen()).collect();
-    let mut stream = client.search(Request::new(SearchRequest {
-        distance: 0.2,
-        name: "test".to_string(),
-        point: random_items
-    })).await?;
+    let stream = client
+        .search(Request::new(SearchRequest {
+            distance: 1.0,
+            name: "test".to_string(),
+            point: Some(GrpcPoint {
+                coords: random_items,
+            }),
+        }))
+        .await?;
 
     let mut inbound = stream.into_inner();
 

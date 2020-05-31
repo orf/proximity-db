@@ -1,13 +1,12 @@
 use crate::grpc::{
     AddRequest, AddResponse, DeleteRequest, DeleteResponse, DescribeRequest, DescribeResponse,
-    ListRequest, SearchRequest, SearchResponse,
+    ListRequest, Point as GrpcPoint, SearchRequest, SearchResponse,
 };
 use tokio::sync::mpsc;
-use tonic::{Request, Response, Status};
+use tonic::{Code, Request, Response, Status};
 
 use crate::grpc::embedding_db_server::EmbeddingDb;
-use crate::sky::Sky;
-use crossbeam_channel::unbounded;
+use crate::sky::{Metrics, Sky};
 use std::sync::Arc;
 
 #[derive(Default)]
@@ -30,34 +29,46 @@ impl EmbeddingDb for EmbeddingDBHandler {
         request: Request<SearchRequest>,
     ) -> Result<Response<Self::SearchStream>, Status> {
         let search_request = request.into_inner();
+
+        if search_request.point.is_none() {
+            return Err(Status::new(Code::InvalidArgument, "No point given"));
+        }
+
         let sky_reference = self.sky.clone();
 
         let (tx, rx) = mpsc::unbounded_channel();
 
         tokio::task::spawn_blocking(move || {
-            let (sync_sender, sync_receiver) = unbounded();
-            if let Err(e) = sky_reference.query(
+            match sky_reference.query(
                 search_request.name,
                 search_request.distance,
-                search_request.point,
-                sync_sender,
+                search_request.point.unwrap().coords,
             ) {
-                tx.send(Err(e.into())).ok();
-            }
-            for (distance, point) in sync_receiver.iter() {
-                if let Err(_) = tx.send(Ok(SearchResponse { distance, point })) {
-                    break;
+                Err(e) => {
+                    tx.send(Err(e.into())).unwrap();
                 }
-            }
+                Ok(query_iterator) => {
+                    for (distance, coords) in query_iterator {
+                        if let Err(_) = tx.send(Ok(SearchResponse {
+                            distance,
+                            point: Some(GrpcPoint { coords }),
+                        })) {
+                            break;
+                        }
+                    }
+                }
+            };
         });
-
         Ok(Response::new(rx))
     }
 
     async fn add(&self, request: Request<AddRequest>) -> Result<Response<AddResponse>, Status> {
         let add_request = request.into_inner();
         let sky = self.sky.clone();
-        sky.add(add_request.name, add_request.point)?;
+        sky.add(
+            add_request.name,
+            add_request.points.into_iter().map(|p| p.coords).collect(),
+        )?;
         Ok(Response::new(AddResponse {}))
     }
 
@@ -68,20 +79,43 @@ impl EmbeddingDb for EmbeddingDBHandler {
         unimplemented!()
     }
 
-    type ListGroupsStream = mpsc::Receiver<Result<DescribeResponse, Status>>;
+    type ListStream = mpsc::UnboundedReceiver<Result<DescribeResponse, Status>>;
 
-    async fn list_groups(
+    async fn list(
         &self,
-        _request: Request<ListRequest>,
-    ) -> Result<Response<Self::ListGroupsStream>, Status> {
-        unimplemented!()
+        request: Request<ListRequest>,
+    ) -> Result<Response<Self::ListStream>, Status> {
+        let prefix = request.into_inner().prefix;
+        let (tx, rx) = mpsc::unbounded_channel();
+
+        for metric in self.sky.list(&prefix) {
+            if let Err(_) = tx.send(Ok(metric.into())) {
+                break;
+            }
+        }
+
+        Ok(Response::new(rx))
     }
 
-    async fn describe_group(
+    async fn describe(
         &self,
-        _request: Request<DescribeRequest>,
+        request: Request<DescribeRequest>,
     ) -> Result<Response<DescribeResponse>, Status> {
-        unimplemented!()
+        let name = request.into_inner().name;
+        let metrics = self.sky.describe(&name)?;
+
+        Ok(Response::new(metrics.into()))
+    }
+}
+
+impl Into<DescribeResponse> for Metrics {
+    fn into(self) -> DescribeResponse {
+        DescribeResponse {
+            name: self.name,
+            length: self.length as u64,
+            dimensions: self.dimensions as u64,
+            memory_size: self.memory_size as u64,
+        }
     }
 }
 
