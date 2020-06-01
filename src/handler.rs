@@ -62,14 +62,22 @@ impl EmbeddingDb for EmbeddingDBHandler {
         Ok(Response::new(rx))
     }
 
-    async fn add(&self, request: Request<AddRequest>) -> Result<Response<AddResponse>, Status> {
-        let add_request = request.into_inner();
+    async fn add(
+        &self,
+        request: Request<tonic::Streaming<AddRequest>>,
+    ) -> Result<Response<AddResponse>, Status> {
+        let mut stream = request.into_inner();
         let sky = self.sky.clone();
-        sky.add(
-            add_request.name,
-            add_request.points.into_iter().map(|p| p.coords).collect(),
-        )?;
-        Ok(Response::new(AddResponse {}))
+        let mut total_added = 0;
+        while let Some(add_request) = stream.message().await? {
+            total_added += sky.add(
+                add_request.name,
+                add_request.points.into_iter().map(|p| p.coords).collect(),
+            )?;
+        }
+        Ok(Response::new(AddResponse {
+            total_added: total_added as u64,
+        }))
     }
 
     async fn delete(

@@ -30,6 +30,7 @@ rand = "0.7.3"
 crossbeam-channel = "0.4.2"
 futures = "0.3.5"
 human_format = "1.0.3"
+streaming-stats = "0.2.3"
 
 [dev-dependencies]
 criterion = "0.3.2"

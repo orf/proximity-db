@@ -3,7 +3,7 @@ package grpc;
 
 service EmbeddingDB {
   rpc Search(SearchRequest) returns (stream SearchResponse) {}
-  rpc Add(AddRequest) returns (AddResponse) {}
+  rpc Add(stream AddRequest) returns (AddResponse) {}
   rpc Delete(DeleteRequest) returns (DeleteResponse) {}
 
   // Meta information
@@ -22,7 +22,9 @@ message AddRequest {
   repeated Point points = 2;
 }
 
-message AddResponse {}
+message AddResponse {
+  uint64 total_added = 1;
+}
 
 message SearchRequest {
   string name = 1;

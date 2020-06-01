@@ -404,6 +404,7 @@ dependencies = [
  "serde_json",
  "slog-json",
  "slog-term",
+ "streaming-stats",
  "structopt",
  "thiserror",
  "tokio",
@@ -1472,6 +1473,15 @@ dependencies = [
  "libc",
  "redox_syscall",
  "winapi 0.3.8",
+]
+
+[[package]]
+name = "streaming-stats"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b0d670ce4e348a2081843569e0f79b21c99c91bb9028b3b3ecb0f050306de547"
+dependencies = [
+ "num-traits",
 ]
 
 [[package]]

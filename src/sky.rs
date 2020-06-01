@@ -41,9 +41,9 @@ pub struct Sky {
 }
 
 impl<'a> Sky {
-    pub fn add(&self, name: String, values: Vec<Vec<f32>>) -> Result<(), SkyError> {
+    pub fn add(&self, name: String, values: Vec<Vec<f32>>) -> Result<usize, SkyError> {
         if !values.len() == 0 {
-            return Ok(());
+            return Ok(0);
         }
 
         let supported_size = SupportedSize::try_from_primitive(values.first().unwrap().len())?;
@@ -63,9 +63,9 @@ impl<'a> Sky {
                 });
             }
         }
-
+        let total_points = values.len();
         constellation_rw.add_points(values);
-        return Ok(());
+        return Ok(total_points);
     }
 
     pub fn query(
