@@ -86,7 +86,7 @@ where
 
 fn run_bench(c: &mut Criterion) {
     rayon::ThreadPoolBuilder::new()
-        .num_threads(6)
+        .num_threads(8)
         .build_global()
         .unwrap();
     let mut g = c.benchmark_group("bench_raw_search_single_match");
