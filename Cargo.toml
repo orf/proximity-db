@@ -31,6 +31,7 @@ crossbeam-channel = "0.4.2"
 futures = "0.3.5"
 human_format = "1.0.3"
 streaming-stats = "0.2.3"
+num_cpus = "1.13.0"
 
 [dev-dependencies]
 criterion = "0.3.2"

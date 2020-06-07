@@ -395,6 +395,7 @@ dependencies = [
  "futures",
  "human_format",
  "nalgebra",
+ "num_cpus",
  "num_enum",
  "prost",
  "rand",
