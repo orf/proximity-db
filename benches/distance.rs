@@ -31,14 +31,16 @@ where
     let mut rng = thread_rng();
     for size in (250_000..1_000_000).step_by(250_000) {
         for match_percent in (0..25).step_by(5) {
+            let match_percent = match_percent as f32;
+
             let sky = Sky::default();
             let search_point = &random_points(1, DimX::dim())[0];
-            let number_of_matches = if match_percent == 0 {
+            let number_of_matches = if match_percent == 0.0 {
                 0
             } else {
                 // This is fucking horrible, but I'm too fatigued to care.
-                let percent : f32 = (match_percent as f32 / 100) as f32;
-                println!("Percent: {}", percent);
+                let percent = match_percent / 100.0;
+                println!("Percent: {}%", percent);
                 (percent * (size as f32)) as usize
             };
             let number_of_non_matches = size - number_of_matches;
