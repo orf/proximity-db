@@ -30,20 +30,24 @@ where
 {
     let mut rng = thread_rng();
     for size in (250_000..1_000_000).step_by(250_000) {
-        for match_percent in (0..100).step_by(10) {
+        for match_percent in (0..100).step_by(25) {
             let sky = Sky::default();
             let search_point = &random_points(1, DimX::dim())[0];
-            let number_of_non_matches = if match_percent == 0 {
-                size
+            let number_of_matches = if match_percent == 0 {
+                0
             } else {
-                (match_percent / 100) * size
+                // This is fucking horrible, but I'm too fatigued to care.
+                let percent : f32 = (match_percent as f32 / 100) as f32;
+                println!("Percent: {}", percent);
+                (percent * (size as f32)) as usize
             };
-            let number_of_matches = size - number_of_non_matches;
+            let number_of_non_matches = size - number_of_matches;
 
             println!(
                 "Adding {} points, with {} matches and {} non matches",
                 size, number_of_matches, number_of_non_matches
             );
+            println!("{} / 100 * {} ({}, {})", match_percent, size, number_of_non_matches, number_of_matches);
 
             let matching_points: Vec<_> = vec![search_point.clone()]
                 .into_iter()
