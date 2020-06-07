@@ -30,7 +30,7 @@ where
 {
     let mut rng = thread_rng();
     for size in (250_000..1_000_000).step_by(250_000) {
-        for match_percent in (0..100).step_by(25) {
+        for match_percent in (0..25).step_by(5) {
             let sky = Sky::default();
             let search_point = &random_points(1, DimX::dim())[0];
             let number_of_matches = if match_percent == 0 {
