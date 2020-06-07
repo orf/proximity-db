@@ -48,6 +48,7 @@ where
         let point: Point32<DimX> = VectorN::<f32, DimX>::from_vec(point).into();
         // let thing = Point32::<DimX>::from_slice(point);
         let (tx, rx) = bounded(100);
+        // let (tx, rx) = crossbeam_channel::unbounded();
         let points = self.points.clone();
         std::thread::spawn(move || {
             points
@@ -94,29 +95,35 @@ mod tests {
 
     #[test]
     fn test_size() {
-        let mut constellation1 = VecConstellation::<U8>::default();
-        constellation1.add_points(&vec![Point32::<U8>::from_slice(&[
-            1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-        ])]);
+        let constellation1 = VecConstellation::<U8>::default();
+        constellation1.add_points(vec![vec![1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]]);
         // Should be exactly 32 bytes
         assert_eq!(constellation1.memory_size(), 32);
     }
 
     #[test]
     fn test_add_multiple() {
-        let mut constellation = VecConstellation::<U1>::default();
-        let points: Vec<_> = vec![Point32::<U1>::new(1.0), Point32::<U1>::new(1.0)];
-        constellation.add_points(&points);
+        let constellation = VecConstellation::<U1>::default();
+        let points: Vec<_> = vec![vec![1.0], vec![2.0]];
+        constellation.add_points(points);
         assert_eq!(constellation.count(), 2);
     }
 
     #[test]
     fn test_query() {
-        let mut constellation = VecConstellation::<U1>::default();
-        constellation.add_points(&vec![Point32::<U1>::new(1.0)]);
-        let target_point = Point32::<U1>::new(1.0);
-        let iterator = constellation.find(target_point, 1.0);
+        let constellation = VecConstellation::<U1>::default();
+        constellation.add_points(vec![vec![2.0]]);
+        let iterator = constellation.find(vec![1.0], 1.0);
         let items: Vec<(f32, Vec<f32>)> = iterator.collect();
-        assert_eq!(items, vec![(0.0, vec![1.0])]);
+        assert_eq!(items, vec![(1.0, vec![2.0])]);
+    }
+
+    #[test]
+    fn test_query_missing() {
+        let constellation = VecConstellation::<U1>::default();
+        constellation.add_points(vec![vec![2.0]]);
+        let iterator = constellation.find(vec![1.0], 0.99);
+        let items: Vec<(f32, Vec<f32>)> = iterator.collect();
+        assert_eq!(items, vec![]);
     }
 }

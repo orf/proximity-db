@@ -1,4 +1,4 @@
-mod vec;
+pub mod vec;
 
 use crossbeam_channel::Receiver;
 pub use vec::VecConstellation;

@@ -1,66 +1,95 @@
 use criterion::measurement::WallTime;
 use criterion::{
-    criterion_group, criterion_main, BenchmarkGroup, BenchmarkId, Criterion, Throughput,
+    criterion_group, criterion_main, BatchSize, BenchmarkGroup, BenchmarkId, Criterion, Throughput,
 };
 use nalgebra::allocator::Allocator;
 use nalgebra::U64;
-use nalgebra::{DefaultAllocator, DimName, VectorN};
+use nalgebra::{DefaultAllocator, DimName};
 
-use crossbeam_channel::unbounded;
-use embedding_db::constellation::{Constellation, VecConstellation};
+use embedding_db::sky::Sky;
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
+use rand::seq::SliceRandom;
+use rand::{thread_rng, Rng};
 use std::time::Duration;
 use typenum::{U128, U256, U512};
 
-fn criterion_benchmark<DimX>(group: &mut BenchmarkGroup<WallTime>)
+fn random_points(count: usize, number: usize) -> Vec<Vec<f32>> {
+    let rng = rand::thread_rng();
+    (0..count)
+        .map(|_| rng.sample_iter(Standard).take(number).collect())
+        .collect()
+}
+
+fn bench_search<DimX>(group: &mut BenchmarkGroup<WallTime>)
 where
     DimX: DimName,
     DefaultAllocator: Allocator<f32, DimX>,
     <DefaultAllocator as Allocator<f32, DimX>>::Buffer: Send + Sync,
     Standard: Distribution<f32>,
 {
-    let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(6)
-        .build()
-        .unwrap();
+    let mut rng = thread_rng();
+    for size in (250_000..1_000_000).step_by(250_000) {
+        for match_percent in (0..100).step_by(10) {
+            let sky = Sky::default();
+            let search_point = &random_points(1, DimX::dim())[0];
+            let number_of_non_matches = if match_percent == 0 {
+                size
+            } else {
+                (match_percent / 100) * size
+            };
+            let number_of_matches = size - number_of_non_matches;
 
-    for size in (100_000..500_000).step_by(100_000) {
-        let mut collection = VecConstellation::default();
+            println!(
+                "Adding {} points, with {} matches and {} non matches",
+                size, number_of_matches, number_of_non_matches
+            );
 
-        let random_points: Vec<_> = (0..size).map(|_| VectorN::new_random().into()).collect();
+            let matching_points: Vec<_> = vec![search_point.clone()]
+                .into_iter()
+                .cycle()
+                .take(number_of_matches)
+                .collect();
+            let non_matching_points: Vec<_> = random_points(number_of_non_matches, DimX::dim());
+            let mut combined_points: Vec<Vec<f32>> = matching_points
+                .into_iter()
+                .chain(non_matching_points)
+                .collect();
+            combined_points.shuffle(&mut rng);
 
-        collection.add_points(&random_points);
+            sky.add("test_sky".to_string(), combined_points).unwrap();
 
-        let our_point = VectorN::new_random().into();
-        group.throughput(Throughput::Elements(collection.count() as u64));
-        group.bench_function(
-            BenchmarkId::new(format!("{}", DimX::dim()), collection.count()),
-            |b| {
-                return pool.install(|| {
+            group.throughput(Throughput::Elements(size as u64));
+            group.bench_function(
+                BenchmarkId::new(format!("{} - {}%", DimX::dim(), match_percent), size),
+                |b| {
                     b.iter_batched(
-                        || unbounded(),
-                        |(send, recv)| {
-                            collection.find_stream(&our_point, 0.0, send);
-                            recv
+                        || search_point.clone(),
+                        |p| {
+                            sky.query("test_sky".to_string(), 0.0, p)
+                                .unwrap()
+                                .collect::<Vec<(f32, Vec<f32>)>>()
                         },
-                        criterion::BatchSize::PerIteration,
+                        BatchSize::PerIteration,
                     );
-                });
-            },
-        );
-        std::mem::drop(collection)
+                },
+            );
+        }
     }
 }
 
 fn run_bench(c: &mut Criterion) {
-    let mut g = c.benchmark_group("Test");
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(6)
+        .build_global()
+        .unwrap();
+    let mut g = c.benchmark_group("bench_raw_search_single_match");
     g.warm_up_time(Duration::from_secs(10));
     g.measurement_time(Duration::from_secs(30));
-    criterion_benchmark::<U64>(&mut g);
-    criterion_benchmark::<U128>(&mut g);
-    criterion_benchmark::<U256>(&mut g);
-    criterion_benchmark::<U512>(&mut g);
+    bench_search::<U64>(&mut g);
+    bench_search::<U128>(&mut g);
+    bench_search::<U256>(&mut g);
+    bench_search::<U512>(&mut g);
     g.finish()
 }
 
