@@ -1,12 +1,9 @@
-use crate::constellation::{Constellation, VecConstellation};
 use enum_iterator::IntoEnumIterator;
-use nalgebra::{U64, U8};
 use num_enum::{IntoPrimitive, TryFromPrimitive, TryFromPrimitiveError};
 
 use std::num::ParseIntError;
 use std::str::FromStr;
 use thiserror::Error;
-use typenum::{U128, U256, U512};
 
 #[derive(TryFromPrimitive, IntoPrimitive, IntoEnumIterator, Debug)]
 #[repr(usize)]
@@ -26,19 +23,6 @@ impl SupportedSize {
             let value: usize = b.into();
             format!("{}{}, ", a, value)
         });
-    }
-}
-
-impl Into<Box<dyn Constellation>> for SupportedSize {
-    fn into(self) -> Box<dyn Constellation> {
-        // I don't know how to move this into the VecConstellation struct :'(
-        match self {
-            SupportedSize::U8 => Box::from(VecConstellation::<U8>::default()),
-            SupportedSize::U64 => Box::from(VecConstellation::<U64>::default()),
-            SupportedSize::U128 => Box::from(VecConstellation::<U128>::default()),
-            SupportedSize::U256 => Box::from(VecConstellation::<U256>::default()),
-            SupportedSize::U512 => Box::from(VecConstellation::<U512>::default()),
-        }
     }
 }
 
@@ -65,6 +49,6 @@ mod tests {
 
     #[test]
     fn test_possible_choices() {
-        assert_eq!(SupportedSize::possible_choices(), "6, 64, 128, 256, 512, ");
+        assert_eq!(SupportedSize::possible_choices(), "4, 64, 128, 256, 512, ");
     }
 }

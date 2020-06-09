@@ -1,5 +1,7 @@
-pub mod vec;
+mod builder;
+mod vec;
 
+pub use builder::ConstellationBuilder;
 use crossbeam_channel::Receiver;
 pub use vec::VecConstellation;
 

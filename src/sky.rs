@@ -1,4 +1,4 @@
-use crate::constellation::{Constellation, QueryIterator};
+use crate::constellation::{Constellation, ConstellationBuilder, QueryIterator};
 use crate::SupportedSize;
 use dashmap::DashMap;
 use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
@@ -51,7 +51,7 @@ impl<'a> Sky {
         let constellation_rw = self
             .constellations
             .entry(name.clone())
-            .or_insert_with(|| supported_size.into());
+            .or_insert_with(|| ConstellationBuilder::from(supported_size).build());
 
         let expected = constellation_rw.dimensions();
         for value in &values {
@@ -140,13 +140,13 @@ mod tests {
     #[test]
     fn test_add() {
         let sky = Sky::default();
-        sky.add("hello".into(), vec![vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]])
+        sky.add("hello".into(), vec![vec![1.0, 2.0, 3.0, 4.0]])
             .unwrap();
     }
 
     #[test]
     fn test_query() {
-        let values = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
+        let values = vec![1.0, 2.0, 3.0, 4.0];
         let sky = Sky::default();
         sky.add("hello".into(), vec![values.clone()]).unwrap();
         let receiver = sky.query("hello".into(), 0.0, values.clone()).unwrap();
