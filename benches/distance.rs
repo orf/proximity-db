@@ -24,7 +24,7 @@ fn bench_search(group: &mut BenchmarkGroup<WallTime>, dimension: usize)
 {
     // let mut rng = thread_rng();
 
-    for number_of_points in (10_000..50_000).step_by(10_000) { //(250_000..1_000_000).step_by(250_000) {
+    for number_of_points in (10_000..100_000).step_by(10_000) { //(250_000..1_000_000).step_by(250_000) {
         let sky = Sky::default();
 
         // Add 100,000 random vectors
