@@ -1,2 +1,2 @@
-/target
-old_benches/
+target/*
+!target/criterion*
