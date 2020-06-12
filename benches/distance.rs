@@ -24,7 +24,7 @@ where
 {
     // let mut rng = thread_rng();
 
-    for number_of_points in (100_000..1_000_000).step_by(100_000) {
+    for number_of_points in (100_000..=1_000_000).step_by(100_000) {
         //(250_000..1_000_000).step_by(250_000) {
         let sky = Sky::default();
 
