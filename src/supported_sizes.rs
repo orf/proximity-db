@@ -1,6 +1,6 @@
 use crate::constellation::{Constellation, VecConstellation};
 use enum_iterator::IntoEnumIterator;
-use nalgebra::{U6, U64};
+use nalgebra::{U64, U8};
 use num_enum::{IntoPrimitive, TryFromPrimitive, TryFromPrimitiveError};
 
 use std::num::ParseIntError;
@@ -12,7 +12,7 @@ use typenum::{U128, U256, U512};
 #[repr(usize)]
 pub enum SupportedSize {
     // For debugging
-    U6 = 6,
+    U8 = 8,
     // Usual sizes
     U64 = 64,
     U128 = 128,
@@ -33,7 +33,7 @@ impl Into<Box<dyn Constellation>> for SupportedSize {
     fn into(self) -> Box<dyn Constellation> {
         // I don't know how to move this into the VecConstellation struct :'(
         match self {
-            SupportedSize::U6 => Box::from(VecConstellation::<U6>::default()),
+            SupportedSize::U8 => Box::from(VecConstellation::<U8>::default()),
             SupportedSize::U64 => Box::from(VecConstellation::<U64>::default()),
             SupportedSize::U128 => Box::from(VecConstellation::<U128>::default()),
             SupportedSize::U256 => Box::from(VecConstellation::<U256>::default()),

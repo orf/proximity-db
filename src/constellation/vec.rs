@@ -2,7 +2,7 @@ use crate::constellation::{Constellation, QueryIterator};
 use crossbeam_channel::bounded;
 use nalgebra::allocator::Allocator;
 use nalgebra::Point;
-use nalgebra::{distance, DefaultAllocator, DimName, VectorN};
+use nalgebra::{distance_squared, DefaultAllocator, DimName, VectorN};
 use rayon::prelude::*;
 use std::mem;
 use std::sync::{Arc, RwLock};
@@ -46,25 +46,27 @@ where
 
     fn find(&self, point: Vec<f32>, within: f32) -> QueryIterator {
         let point: Point32<DimX> = VectorN::<f32, DimX>::from_vec(point).into();
-        // let thing = Point32::<DimX>::from_slice(point);
         let (tx, rx) = bounded(100);
-        // let (tx, rx) = crossbeam_channel::unbounded();
         let points = self.points.clone();
-        std::thread::spawn(move || {
+        let handle = std::thread::spawn(move || {
             points
                 .read()
                 .unwrap()
                 .par_iter()
-                .try_for_each_with(tx, |tx, p| {
-                    let dist = distance(&point, &p);
+                .try_for_each_with(tx.clone(), |tx, p| {
+                    let dist = distance_squared(&point, &p);
                     if dist <= within {
-                        return tx.send((dist, p.coords.as_slice().to_vec()));
+                        println!("Found distance");
+                        return tx.send((0., p.coords.as_slice().to_vec()));
                     }
                     Ok(())
                 })
                 .ok();
+            // This is really important. Without this line there are sporadic stack overflows
+            // with the benchmark - this thread doesn't terminate fast enough after `par_iter()`
+            // finishes, and threads pile up.
+            mem::drop(tx);
         });
-
         return QueryIterator { receiver: rx };
     }
 

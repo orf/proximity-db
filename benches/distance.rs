@@ -19,12 +19,13 @@ fn random_points(count: usize, dimension: usize) -> Vec<Vec<f32>> {
 }
 
 fn bench_search(group: &mut BenchmarkGroup<WallTime>, dimension: usize)
-    where
-        Standard: Distribution<f32>,
+where
+    Standard: Distribution<f32>,
 {
     // let mut rng = thread_rng();
 
-    for number_of_points in (10_000..100_000).step_by(20_000) { //(250_000..1_000_000).step_by(250_000) {
+    for number_of_points in (10_000..100_000).step_by(20_000) {
+        //(250_000..1_000_000).step_by(250_000) {
         let sky = Sky::default();
 
         // Add 100,000 random vectors
@@ -37,10 +38,7 @@ fn bench_search(group: &mut BenchmarkGroup<WallTime>, dimension: usize)
         // black_box(iterator.collect::<Vec<(f32, Vec<f32>)>>());
         group.throughput(Throughput::Elements(number_of_points as u64));
         group.bench_function(
-            BenchmarkId::new(
-                format!("{}", dimension),
-                number_of_points,
-            ),
+            BenchmarkId::new(format!("{}", dimension), number_of_points),
             |b| {
                 b.iter_batched(
                     || random_point.clone(),
@@ -56,8 +54,6 @@ fn bench_search(group: &mut BenchmarkGroup<WallTime>, dimension: usize)
     }
 }
 
-
-
 fn run_bench(c: &mut Criterion) {
     rayon::ThreadPoolBuilder::new()
         .num_threads(num_cpus::get())
@@ -65,7 +61,7 @@ fn run_bench(c: &mut Criterion) {
         .build_global()
         .unwrap();
     let mut g = c.benchmark_group("search_no_match");
-    // g.warm_up_time(Duration::from_secs(10));
+    // g.warm_up_time(Duration::from_secs(0));
     // g.measurement_time(Duration::from_secs(30));
     for size in SupportedSize::into_enum_iter() {
         bench_search(&mut g, size.into());
