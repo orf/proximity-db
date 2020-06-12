@@ -24,7 +24,7 @@ where
 {
     // let mut rng = thread_rng();
 
-    for number_of_points in (10_000..100_000).step_by(20_000) {
+    for number_of_points in (100_000..1_000_000).step_by(100_000) {
         //(250_000..1_000_000).step_by(250_000) {
         let sky = Sky::default();
 
@@ -71,3 +71,59 @@ fn run_bench(c: &mut Criterion) {
 
 criterion_group!(benches, run_bench);
 criterion_main!(benches);
+
+//     for match_percent in (0..25).step_by(5) {
+//         let match_percent = match_percent as f32;
+//
+//         let sky = Sky::default();
+//         let search_point = &random_points(1, DimX::dim())[0];
+//         let number_of_matches = if match_percent == 0.0 {
+//             0
+//         } else {
+//             // This is fucking horrible, but I'm too fatigued to care.
+//             let percent = match_percent / 100.0;
+//             println!("Percent: {}%", percent);
+//             (percent * (size as f32)) as usize
+//         };
+//         let number_of_non_matches = size - number_of_matches;
+//
+//         println!(
+//             "Adding {} points, with {} matches and {} non matches",
+//             size, number_of_matches, number_of_non_matches
+//         );
+//         println!(
+//             "{} / 100 * {} ({}, {})",
+//             match_percent, size, number_of_non_matches, number_of_matches
+//         );
+//
+//         let matching_points: Vec<_> = vec![search_point.clone()]
+//             .into_iter()
+//             .cycle()
+//             .take(number_of_matches)
+//             .collect();
+//         let non_matching_points: Vec<_> = random_points(number_of_non_matches, DimX::dim());
+//         let mut combined_points: Vec<Vec<f32>> = matching_points
+//             .into_iter()
+//             .chain(non_matching_points)
+//             .collect();
+//         combined_points.shuffle(&mut rng);
+//
+//         sky.add("test_sky".to_string(), combined_points).unwrap();
+//
+//         group.throughput(Throughput::Elements(size as u64));
+//         group.bench_function(
+//             BenchmarkId::new(format!("{} - {}%", DimX::dim(), match_percent), size),
+//             |b| {
+//                 b.iter_batched(
+//                     || search_point.clone(),
+//                     |p| {
+//                         sky.query("test_sky".to_string(), 0.0, p)
+//                             .unwrap()
+//                             .collect::<Vec<(f32, Vec<f32>)>>()
+//                     },
+//                     BatchSize::PerIteration,
+//                 );
+//             },
+//         );
+//     }
+// }
