@@ -8,7 +8,7 @@ use enum_iterator::IntoEnumIterator;
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
 use rand::seq::SliceRandom;
-use rand::{thread_rng, Rng};
+use rand::Rng;
 use std::time::Duration;
 
 fn random_points(count: usize, dimension: usize) -> Vec<Vec<f32>> {
@@ -62,7 +62,7 @@ fn run_bench(c: &mut Criterion) {
         .unwrap();
     let mut g = c.benchmark_group("search_no_match");
     // g.warm_up_time(Duration::from_secs(0));
-    // g.measurement_time(Duration::from_secs(30));
+    g.measurement_time(Duration::from_secs(30));
     for size in SupportedSize::into_enum_iter() {
         bench_search(&mut g, size.into());
     }

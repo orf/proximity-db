@@ -48,7 +48,7 @@ where
         let point: Point32<DimX> = VectorN::<f32, DimX>::from_vec(point).into();
         let (tx, rx) = bounded(100);
         let points = self.points.clone();
-        let handle = std::thread::spawn(move || {
+        std::thread::spawn(move || {
             points
                 .read()
                 .unwrap()
@@ -56,7 +56,6 @@ where
                 .try_for_each_with(tx.clone(), |tx, p| {
                     let dist = distance_squared(&point, &p);
                     if dist <= within {
-                        println!("Found distance");
                         return tx.send((0., p.coords.as_slice().to_vec()));
                     }
                     Ok(())

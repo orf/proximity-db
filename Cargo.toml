@@ -44,6 +44,6 @@ tonic-build = "0.2.0"
 name = "distance"
 harness = false
 
-#[profile.bench]
-#lto = true
-#codegen-units = 1
+[profile.bench]
+lto = true
+codegen-units = 1
