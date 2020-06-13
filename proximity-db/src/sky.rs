@@ -141,8 +141,11 @@ mod tests {
     #[test]
     fn test_add() {
         let sky = Sky::default();
-        sky.add("hello".into(), vec![vec![1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0]])
-            .unwrap();
+        sky.add(
+            "hello".into(),
+            vec![vec![1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0]],
+        )
+        .unwrap();
     }
 
     #[test]

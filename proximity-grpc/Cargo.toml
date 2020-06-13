@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Tom Forbes <tom@tomforb.es>"]
 edition = "2018"
 description = "ProximityDB GRPC bindings"
-license = "GPLv3"
+license = "GPL-3.0"
 
 [dependencies]
 tonic = "0.2.1"
