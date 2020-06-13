@@ -1,8 +1,8 @@
-use proximity::{Constellation, QueryIterator};
 use crate::constellation_builder::ConstellationBuilder;
 use crate::SupportedSize;
 use dashmap::DashMap;
 use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
+use proximity::{Constellation, QueryIterator};
 
 use thiserror::Error;
 use tonic::{Code, Status};

@@ -1,10 +1,9 @@
 use crossbeam_channel::Receiver;
 
-mod vec;
 mod debug;
+mod vec;
 
 pub use vec::VecSIMDConstellation;
-
 
 pub trait Constellation: Sync + Send {
     fn add_points(&self, points: Vec<Vec<f32>>);

@@ -1,9 +1,7 @@
 use crate::{Constellation, QueryIterator};
 use bytemuck::cast;
 use crossbeam_channel::bounded;
-use nalgebra::allocator::Allocator;
-use nalgebra::Point;
-use nalgebra::{distance_squared, DefaultAllocator, DimName, VectorN};
+use nalgebra::{allocator::Allocator, distance_squared, DefaultAllocator, DimName, Point, VectorN};
 use rayon::prelude::*;
 use simba::simd::{SimdValue, WideF32x4};
 use std::mem;
@@ -12,9 +10,9 @@ use std::sync::{Arc, RwLock};
 pub type Point32<DimX> = Point<WideF32x4, DimX>;
 
 fn make_point<DimX>(point: Vec<f32>) -> Point32<DimX>
-    where
-        DimX: DimName,
-        DefaultAllocator: Allocator<WideF32x4, DimX>,
+where
+    DimX: DimName,
+    DefaultAllocator: Allocator<WideF32x4, DimX>,
 {
     let wide_vec: Vec<WideF32x4> = point
         .chunks(4)
@@ -23,20 +21,19 @@ fn make_point<DimX>(point: Vec<f32>) -> Point32<DimX>
     VectorN::<WideF32x4, DimX>::from_vec(wide_vec).into()
 }
 
-
 /// A constellation contains lots of points.
 pub struct VecSIMDConstellation<DimX>
-    where
-        DimX: DimName,
-        DefaultAllocator: Allocator<WideF32x4, DimX>,
+where
+    DimX: DimName,
+    DefaultAllocator: Allocator<WideF32x4, DimX>,
 {
     points: Arc<RwLock<Vec<Point32<DimX>>>>,
 }
 
 impl<DimX> Default for VecSIMDConstellation<DimX>
-    where
-        DimX: DimName,
-        DefaultAllocator: Allocator<WideF32x4, DimX>,
+where
+    DimX: DimName,
+    DefaultAllocator: Allocator<WideF32x4, DimX>,
 {
     fn default() -> Self {
         VecSIMDConstellation {
@@ -46,10 +43,10 @@ impl<DimX> Default for VecSIMDConstellation<DimX>
 }
 
 impl<DimX> Constellation for VecSIMDConstellation<DimX>
-    where
-        DimX: DimName + Sync,
-        DefaultAllocator: Allocator<WideF32x4, DimX>,
-        <DefaultAllocator as Allocator<WideF32x4, DimX>>::Buffer: Send + Sync,
+where
+    DimX: DimName + Sync,
+    DefaultAllocator: Allocator<WideF32x4, DimX>,
+    <DefaultAllocator as Allocator<WideF32x4, DimX>>::Buffer: Send + Sync,
 {
     fn add_points(&self, points: Vec<Vec<f32>>) {
         self.points
