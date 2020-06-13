@@ -113,9 +113,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
-    use typenum::{U1, U16, U4};
+    use crate::sizes::{U1, U16, U4};
 
     #[test]
     fn test_len() {

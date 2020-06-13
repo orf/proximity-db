@@ -1,6 +1,7 @@
 mod simple;
 
 pub use simple::SimpleConstellation;
+pub use typenum::consts as sizes;
 
 #[cfg(feature = "simd")]
 mod simd_vec;

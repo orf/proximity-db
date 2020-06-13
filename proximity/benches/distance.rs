@@ -1,13 +1,12 @@
-use criterion::measurement::WallTime;
 use criterion::{
-    criterion_group, criterion_main, BatchSize, BenchmarkGroup, BenchmarkId, Criterion, Throughput,
+    criterion_group, criterion_main, measurement::WallTime, BatchSize, BenchmarkGroup, BenchmarkId,
+    Criterion, Throughput,
 };
-use proximity::{Constellation, SIMDConstellation, SimpleConstellation};
-use rand::distributions::Standard;
-use rand::prelude::Distribution;
-use rand::Rng;
+use proximity::{
+    Constellation, SIMDConstellation, SimpleConstellation, sizes::*,
+};
+use rand::{distributions::Standard, Rng};
 use std::time::Duration;
-use typenum::{U128, U16, U32, U512, U64};
 
 fn random_points(count: usize, dimension: usize) -> Vec<Vec<f32>> {
     let rng = rand::thread_rng();
@@ -16,11 +15,10 @@ fn random_points(count: usize, dimension: usize) -> Vec<Vec<f32>> {
         .collect()
 }
 
-fn bench_search(group: &mut BenchmarkGroup<WallTime>, factory: &dyn Fn() -> Box<dyn Constellation>)
-where
-    Standard: Distribution<f32>,
-{
-    // let mut rng = thread_rng();
+fn bench_search(
+    group: &mut BenchmarkGroup<WallTime>,
+    factory: &dyn Fn() -> Box<dyn Constellation>,
+) {
     for number_of_points in (250_000..=1_000_000).step_by(250_000) {
         let constellation: Box<dyn Constellation> = factory();
         let dimension = constellation.dimensions();
@@ -53,13 +51,12 @@ fn run_bench(c: &mut Criterion) {
     bench_search(&mut simple, &|| {
         Box::new(SimpleConstellation::<U64>::default())
     });
-    // Skip the middle benchmarks, to save time.
-    // bench_search(&mut simple, &|| {
-    //     Box::new(SimpleConstellation::<U128>::default())
-    // });
-    // bench_search(&mut simple, &|| {
-    //     Box::new(SimpleConstellation::<U256>::default())
-    // });
+    bench_search(&mut simple, &|| {
+        Box::new(SimpleConstellation::<U128>::default())
+    });
+    bench_search(&mut simple, &|| {
+        Box::new(SimpleConstellation::<U256>::default())
+    });
     bench_search(&mut simple, &|| {
         Box::new(SimpleConstellation::<U512>::default())
     });

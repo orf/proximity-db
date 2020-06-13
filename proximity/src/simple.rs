@@ -61,9 +61,8 @@ impl<N: ArrayLength<f32>> Constellation for SimpleConstellation<N> {
 
 #[cfg(test)]
 mod tests {
-    // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
-    use typenum::{U16, U4};
+    use crate::sizes::{U16, U4};
 
     #[test]
     fn test_len() {
