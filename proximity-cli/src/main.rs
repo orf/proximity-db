@@ -131,7 +131,7 @@ async fn fill(
             Ok::<(), anyhow::Error>(())
         }
     }))
-    .buffer_unordered(parallel);
+        .buffer_unordered(parallel);
 
     println!(
         "Sending {} batches of {} points, with {} parallel requests",

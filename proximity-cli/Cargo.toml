@@ -7,4 +7,14 @@ description = "CLI to interact with ProximityDB"
 license = "GPL-3.0"
 
 [dependencies]
-# Point dependencies
+tonic = "0.2.1"
+tokio = { version = "0.2.21", features = ["macros"] }
+structopt = "0.3.14"
+
+anyhow = "1.0.31"
+rand = "0.7.3"
+futures = "0.3.5"
+human_format = "1.0.3"
+streaming-stats = "0.2.3"
+
+proximity-grpc = { path = "../proximity-grpc", version = "0.1.1" }

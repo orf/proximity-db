@@ -7,25 +7,13 @@ description = "Nearest Neighbour Database"
 license = "GPL-3.0"
 
 [dependencies]
-# GRPC/proximity-db dependencies
-structopt = "0.3.14"
 tonic = "0.2.1"
-tokio = { version = "0.2.21", features = ["full"] }
+tokio = { version = "0.2.21", features = ["macros", "sync", "rt-core"] }
 num_enum = "0.5.0"
 enum-iterator = "0.6.0"
 dashmap = "3.11.4"
-
-# Point dependencies
-nalgebra = "0.21.1"
-typenum = "1.12.0"
-
-# Utilities
 anyhow = "1.0.31"
 thiserror = "1.0.19"
-rand = "0.7.3"
-futures = "0.3.5"
-human_format = "1.0.3"
-streaming-stats = "0.2.3"
 
-proximity-grpc = { path = "../proximity-grpc", version = "0.1.0" }
-proximity = { path = "../proximity", version = "0.1.0" }
+proximity-grpc = { path = "../proximity-grpc", version = "0.1.1" }
+proximity = { path = "../proximity", version = "0.1.1" }
