@@ -1,27 +1,18 @@
-use crossbeam_channel::Receiver;
+mod simple;
+pub use simple::SimpleConstellation;
 
-mod debug;
+#[cfg(feature = "simd")]
 mod vec;
-
+#[cfg(feature = "simd")]
 pub use vec::VecSIMDConstellation;
 
-pub trait Constellation: Sync + Send {
+use typenum::Unsigned;
+
+pub trait Constellation<T: Unsigned>: Sync + Send {
     fn add_points(&self, points: Vec<Vec<f32>>);
-    fn find(&self, point: Vec<f32>, within: f32) -> QueryIterator;
+    fn find(&self, point: Vec<f32>, within: f32) -> Box<dyn Iterator<Item = (f32, Vec<f32>)>>;
 
     fn count(&self) -> usize;
     fn dimensions(&self) -> usize;
     fn memory_size(&self) -> usize;
-}
-
-pub struct QueryIterator {
-    receiver: Receiver<(f32, Vec<f32>)>,
-}
-
-impl Iterator for QueryIterator {
-    type Item = (f32, Vec<f32>);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        return self.receiver.recv().ok();
-    }
 }

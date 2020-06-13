@@ -1,39 +1,40 @@
-use crate::{Constellation, QueryIterator};
+use crate::Constellation;
 use bytemuck::cast;
 use crossbeam_channel::bounded;
-use nalgebra::{allocator::Allocator, distance_squared, DefaultAllocator, DimName, Point, VectorN};
+use nalgebra::{
+    allocator::Allocator, distance, DefaultAllocator, DimName, NamedDim, Point, VectorN,
+};
 use rayon::prelude::*;
 use simba::simd::{SimdValue, WideF32x4};
-use std::mem;
 use std::sync::{Arc, RwLock};
 
 pub type Point32<DimX> = Point<WideF32x4, DimX>;
 
-fn make_point<DimX>(point: Vec<f32>) -> Point32<DimX>
+fn make_point<DimX>(point: Vec<f32>) -> Point32<DimX::Name>
 where
-    DimX: DimName,
-    DefaultAllocator: Allocator<WideF32x4, DimX>,
+    DimX: NamedDim,
+    DefaultAllocator: Allocator<WideF32x4, DimX::Name>,
 {
     let wide_vec: Vec<WideF32x4> = point
         .chunks(4)
         .map(|c| WideF32x4::from(<[f32; 4]>::from([c[0], c[1], c[2], c[3]])))
         .collect();
-    VectorN::<WideF32x4, DimX>::from_vec(wide_vec).into()
+    VectorN::<WideF32x4, DimX::Name>::from_vec(wide_vec).into()
 }
 
 /// A constellation contains lots of points.
 pub struct VecSIMDConstellation<DimX>
 where
-    DimX: DimName,
-    DefaultAllocator: Allocator<WideF32x4, DimX>,
+    DimX: NamedDim,
+    DefaultAllocator: Allocator<WideF32x4, DimX::Name>,
 {
-    points: Arc<RwLock<Vec<Point32<DimX>>>>,
+    points: Arc<RwLock<Vec<Point32<DimX::Name>>>>,
 }
 
 impl<DimX> Default for VecSIMDConstellation<DimX>
 where
-    DimX: DimName,
-    DefaultAllocator: Allocator<WideF32x4, DimX>,
+    DimX: NamedDim,
+    DefaultAllocator: Allocator<WideF32x4, DimX::Name>,
 {
     fn default() -> Self {
         VecSIMDConstellation {
@@ -42,22 +43,22 @@ where
     }
 }
 
-impl<DimX> Constellation for VecSIMDConstellation<DimX>
+impl<DimX> Constellation<DimX> for VecSIMDConstellation<DimX>
 where
-    DimX: DimName + Sync,
-    DefaultAllocator: Allocator<WideF32x4, DimX>,
-    <DefaultAllocator as Allocator<WideF32x4, DimX>>::Buffer: Send + Sync,
+    DimX: NamedDim + Sync,
+    DefaultAllocator: Allocator<WideF32x4, DimX::Name>,
+    <DefaultAllocator as Allocator<WideF32x4, DimX::Name>>::Buffer: Send + Sync,
 {
     fn add_points(&self, points: Vec<Vec<f32>>) {
         self.points
             .clone()
             .write()
             .unwrap()
-            .extend(points.into_iter().map(|p| make_point(p)))
+            .extend(points.into_iter().map(|p| make_point::<DimX>(p)))
     }
 
-    fn find(&self, point: Vec<f32>, within: f32) -> QueryIterator {
-        let point: Point32<DimX> = make_point(point);
+    fn find(&self, point: Vec<f32>, within: f32) -> Box<dyn Iterator<Item = (f32, Vec<f32>)>> {
+        let point = make_point::<DimX>(point);
         let (tx, rx) = bounded(100);
         let points = self.points.clone();
 
@@ -69,8 +70,8 @@ where
                     .unwrap()
                     .par_iter()
                     .try_for_each_with(tx.clone(), |tx, p| {
-                        let result = distance_squared(&point, &p);
-                        let dist: f32 = cast::<_, [f32; 4]>(result.0).iter().sum();
+                        let result = distance(&point, &p);
+                        let dist: f32 = cast::<_, [f32; 4]>(result.0).iter().sum::<f32>().sqrt();
                         if dist <= within {
                             // This seems absolutely horrible. Is there really not a better way?
                             let flat_coords: Vec<f32> = p
@@ -87,10 +88,10 @@ where
                 // This is really important. Without this line there are sporadic stack overflows
                 // with the benchmark - this thread doesn't terminate fast enough after `par_iter()`
                 // finishes, and threads pile up.
-                mem::drop(tx);
+                std::mem::drop(tx);
             })
             .unwrap();
-        return QueryIterator { receiver: rx };
+        return Box::new(rx.into_iter());
     }
 
     fn count(&self) -> usize {
@@ -98,11 +99,11 @@ where
     }
 
     fn dimensions(&self) -> usize {
-        DimX::dim() * WideF32x4::lanes()
+        DimX::Name::dim() * WideF32x4::lanes()
     }
 
     fn memory_size(&self) -> usize {
-        mem::size_of::<Point32<DimX>>() * self.count()
+        std::mem::size_of::<Point32<DimX::Name>>() * self.count()
     }
 }
 
@@ -110,7 +111,7 @@ where
 mod tests {
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
-    use nalgebra::{U1, U2};
+    use typenum::{U1, U2};
 
     #[test]
     fn test_len() {
@@ -119,7 +120,7 @@ mod tests {
     }
 
     #[test]
-    fn test_size() {
+    fn test_mem_size() {
         let constellation1 = VecSIMDConstellation::<U2>::default();
         constellation1.add_points(vec![vec![1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]]);
         // Should be exactly 32 bytes
@@ -140,7 +141,7 @@ mod tests {
         constellation.add_points(vec![vec![2.0, 2.0, 2.0, 2.0]]);
         let iterator = constellation.find(vec![1.0, 1.0, 1.0, 1.0], 10.);
         let items: Vec<(f32, Vec<f32>)> = iterator.collect();
-        assert_eq!(items, vec![(4.0, vec![2.0, 2.0, 2.0, 2.0])]);
+        assert_eq!(items, vec![(2.0, vec![2.0, 2.0, 2.0, 2.0])]);
     }
 
     #[test]
