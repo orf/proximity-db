@@ -1110,11 +1110,11 @@ dependencies = [
 
 [[package]]
 name = "proximity-cli"
-version = "0.1.0"
+version = "0.1.1"
 
 [[package]]
 name = "proximity-db"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "dashmap",

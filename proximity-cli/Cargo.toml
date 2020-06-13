@@ -1,6 +1,6 @@
 [package]
 name = "proximity-cli"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Tom Forbes <tom@tomforb.es>"]
 edition = "2018"
 description = "CLI to interact with ProximityDB"
