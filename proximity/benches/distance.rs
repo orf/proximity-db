@@ -7,7 +7,7 @@ use rand::distributions::Standard;
 use rand::prelude::Distribution;
 use rand::Rng;
 use std::time::Duration;
-use typenum::{U128, U16, U2, U256, U32, U512, U64, U8};
+use typenum::{U128, U16, U32, U512, U64};
 
 fn random_points(count: usize, dimension: usize) -> Vec<Vec<f32>> {
     let rng = rand::thread_rng();
@@ -44,24 +44,22 @@ where
 
 fn run_bench(c: &mut Criterion) {
     rayon::ThreadPoolBuilder::new()
-        .num_threads(num_cpus::get())
+        .num_threads(num_cpus::get() - 1)
         .thread_name(|idx| format!("rayon-iter-{}", idx))
         .build_global()
         .unwrap();
     let mut simple = c.benchmark_group("simple");
     simple.measurement_time(Duration::from_secs(30));
     bench_search(&mut simple, &|| {
-        Box::new(SimpleConstellation::<U8>::default())
-    });
-    bench_search(&mut simple, &|| {
         Box::new(SimpleConstellation::<U64>::default())
     });
-    bench_search(&mut simple, &|| {
-        Box::new(SimpleConstellation::<U128>::default())
-    });
-    bench_search(&mut simple, &|| {
-        Box::new(SimpleConstellation::<U256>::default())
-    });
+    // Skip the middle benchmarks, to save time.
+    // bench_search(&mut simple, &|| {
+    //     Box::new(SimpleConstellation::<U128>::default())
+    // });
+    // bench_search(&mut simple, &|| {
+    //     Box::new(SimpleConstellation::<U256>::default())
+    // });
     bench_search(&mut simple, &|| {
         Box::new(SimpleConstellation::<U512>::default())
     });
@@ -69,7 +67,6 @@ fn run_bench(c: &mut Criterion) {
 
     let mut simd = c.benchmark_group("simd");
     simd.measurement_time(Duration::from_secs(30));
-    bench_search(&mut simd, &|| Box::new(SIMDConstellation::<U2>::default()));
     bench_search(&mut simd, &|| Box::new(SIMDConstellation::<U16>::default()));
     bench_search(&mut simd, &|| Box::new(SIMDConstellation::<U32>::default()));
     bench_search(&mut simd, &|| Box::new(SIMDConstellation::<U64>::default()));

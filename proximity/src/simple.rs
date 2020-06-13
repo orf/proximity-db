@@ -1,5 +1,6 @@
 use crate::Constellation;
 use generic_array::{ArrayLength, GenericArray};
+use rayon::prelude::*;
 use std::sync::RwLock;
 
 /// A slow, reference constellation.
@@ -27,7 +28,7 @@ impl<N: ArrayLength<f32>> Constellation for SimpleConstellation<N> {
             .points
             .read()
             .expect("Error unwrapping points")
-            .iter()
+            .par_iter()
             .filter_map(|p| {
                 let distance = p
                     .iter()
