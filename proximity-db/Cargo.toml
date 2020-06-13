@@ -27,5 +27,5 @@ futures = "0.3.5"
 human_format = "1.0.3"
 streaming-stats = "0.2.3"
 
-proximity-grpc = { path = "../proximity-grpc" }
-proximity = { path = "../proximity" }
+proximity-grpc = { path = "../proximity-grpc", version = "0.1.0" }
+proximity = { path = "../proximity", version = "0.1.0" }
