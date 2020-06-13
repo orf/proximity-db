@@ -71,7 +71,11 @@ where
                     .par_iter()
                     .try_for_each_with(tx.clone(), |tx, p| {
                         let result = distance(&point, &p);
-                        let dist: f32 = cast::<_, [f32; 4]>(result.0).iter().sum::<f32>().sqrt();
+                        let dist: f32 = cast::<_, [f32; 4]>(result.0)
+                            .iter()
+                            .map(|i| i.powf(2.))
+                            .sum::<f32>()
+                            .sqrt();
                         if dist <= within {
                             // This seems absolutely horrible. Is there really not a better way?
                             let flat_coords: Vec<f32> = p
@@ -111,45 +115,28 @@ where
 mod tests {
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
-    use typenum::{U1, U2};
+    use typenum::{U1, U16, U4};
 
     #[test]
     fn test_len() {
-        let constellation = VecSIMDConstellation::<U1>::default();
-        assert_eq!(constellation.count(), 0);
+        crate::tests::test_length(&VecSIMDConstellation::<U1>::default());
+        crate::tests::test_length(&VecSIMDConstellation::<U16>::default());
     }
 
     #[test]
-    fn test_mem_size() {
-        let constellation1 = VecSIMDConstellation::<U2>::default();
-        constellation1.add_points(vec![vec![1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]]);
-        // Should be exactly 32 bytes
-        assert_eq!(constellation1.memory_size(), 32);
+    fn test_mem() {
+        crate::tests::test_mem_size(&VecSIMDConstellation::<U1>::default());
+        crate::tests::test_mem_size(&VecSIMDConstellation::<U16>::default());
     }
 
     #[test]
     fn test_add_multiple() {
-        let constellation = VecSIMDConstellation::<U1>::default();
-        let points: Vec<_> = vec![vec![1.0, 1.0, 1.0, 1.0], vec![1.0, 1.0, 1.0, 1.0]];
-        constellation.add_points(points);
-        assert_eq!(constellation.count(), 2);
+        crate::tests::test_add_multiple(&VecSIMDConstellation::<U1>::default());
+        crate::tests::test_add_multiple(&VecSIMDConstellation::<U16>::default());
     }
 
     #[test]
     fn test_query() {
-        let constellation = VecSIMDConstellation::<U1>::default();
-        constellation.add_points(vec![vec![2.0, 2.0, 2.0, 2.0]]);
-        let iterator = constellation.find(vec![1.0, 1.0, 1.0, 1.0], 10.);
-        let items: Vec<(f32, Vec<f32>)> = iterator.collect();
-        assert_eq!(items, vec![(2.0, vec![2.0, 2.0, 2.0, 2.0])]);
-    }
-
-    #[test]
-    fn test_query_missing() {
-        let constellation = VecSIMDConstellation::<U1>::default();
-        constellation.add_points(vec![vec![2., 2., 2., 2.]]);
-        let iterator = constellation.find(vec![1., 1., 1., 1.], 0.99);
-        let items: Vec<(f32, Vec<f32>)> = iterator.collect();
-        assert_eq!(items, vec![]);
+        crate::tests::test_query(&VecSIMDConstellation::<U4>::default());
     }
 }
