@@ -1,7 +1,7 @@
-use proximity_db::grpc::proximity_db_client::ProximityDbClient;
-use proximity_db::grpc::{AddRequest, ListRequest, Point as GrpcPoint, SearchRequest};
 use futures::StreamExt;
 use human_format::{Formatter, Scales};
+use proximity_grpc::proximity_db_client::ProximityDbClient;
+use proximity_grpc::{AddRequest, ListRequest, Point as GrpcPoint, SearchRequest};
 use rand::distributions::Standard;
 use rand::Rng;
 use stats::MinMax;

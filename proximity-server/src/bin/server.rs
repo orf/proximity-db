@@ -1,6 +1,6 @@
-use proximity_db::grpc::proximity_db_server::ProximityDbServer;
 use proximity_db::handler::ProximityDBHandler;
 use proximity_db::sky::Sky;
+use proximity_grpc::proximity_db_server::ProximityDbServer;
 use tonic::transport::Server;
 
 #[tokio::main]

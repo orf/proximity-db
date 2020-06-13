@@ -1,5 +1,4 @@
-pub mod constellation;
-pub mod grpc;
+pub mod constellation_builder;
 pub mod handler;
 pub mod sky;
 pub mod supported_sizes;

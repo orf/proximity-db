@@ -1,12 +1,12 @@
-use crate::grpc::{
+use proximity_grpc::{
     AddRequest, AddResponse, DeleteRequest, DeleteResponse, DescribeRequest, DescribeResponse,
     ListRequest, Point as GrpcPoint, SearchRequest, SearchResponse,
 };
 use tokio::sync::mpsc;
 use tonic::{Code, Request, Response, Status};
 
-use crate::grpc::proximity_db_server::ProximityDb;
 use crate::sky::{Metrics, Sky};
+use proximity_grpc::proximity_db_server::ProximityDb;
 use std::sync::Arc;
 
 #[derive(Default)]

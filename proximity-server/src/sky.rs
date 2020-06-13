@@ -1,4 +1,5 @@
-use crate::constellation::{Constellation, ConstellationBuilder, QueryIterator};
+use proximity::{Constellation, QueryIterator};
+use crate::constellation_builder::ConstellationBuilder;
 use crate::SupportedSize;
 use dashmap::DashMap;
 use num_enum::{TryFromPrimitive, TryFromPrimitiveError};

@@ -11,8 +11,6 @@ service ProximityDB {
   rpc Describe(DescribeRequest) returns (DescribeResponse) {}
 }
 
-// Later: make names include the size in the prefix: `64/abcdef`, rather than implicit auto-detection.
-
 message Point {
   repeated float coords = 1;
 }

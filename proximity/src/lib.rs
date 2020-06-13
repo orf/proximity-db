@@ -1,9 +1,10 @@
-mod builder;
-mod vec;
-
-pub use builder::ConstellationBuilder;
 use crossbeam_channel::Receiver;
-pub use vec::VecConstellation;
+
+mod vec;
+mod debug;
+
+pub use vec::VecSIMDConstellation;
+
 
 pub trait Constellation: Sync + Send {
     fn add_points(&self, points: Vec<Vec<f32>>);

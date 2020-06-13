@@ -1,0 +1,29 @@
+[package]
+name = "proximity-db"
+version = "0.1.0"
+authors = ["Tom Forbes <tom@tomforb.es>"]
+edition = "2018"
+
+[dependencies]
+# GRPC/proximity-server dependencies
+structopt = "0.3.14"
+tonic = "0.2.1"
+tokio = { version = "0.2.21", features = ["full"] }
+num_enum = "0.5.0"
+enum-iterator = "0.6.0"
+dashmap = "3.11.4"
+
+# Point dependencies
+nalgebra = "0.21.1"
+typenum = "1.12.0"
+
+# Utilities
+anyhow = "1.0.31"
+thiserror = "1.0.19"
+rand = "0.7.3"
+futures = "0.3.5"
+human_format = "1.0.3"
+streaming-stats = "0.2.3"
+
+proximity-grpc = { path = "../proximity-grpc" }
+proximity = { path = "../proximity" }
