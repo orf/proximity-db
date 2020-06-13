@@ -2,9 +2,9 @@ use criterion::measurement::WallTime;
 use criterion::{
     criterion_group, criterion_main, BatchSize, BenchmarkGroup, BenchmarkId, Criterion, Throughput,
 };
-use embedding_db::sky::Sky;
-use embedding_db::SupportedSize;
 use enum_iterator::IntoEnumIterator;
+use proximity_db::sky::Sky;
+use proximity_db::SupportedSize;
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
 use rand::seq::SliceRandom;

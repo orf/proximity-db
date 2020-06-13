@@ -5,23 +5,23 @@ use crate::grpc::{
 use tokio::sync::mpsc;
 use tonic::{Code, Request, Response, Status};
 
-use crate::grpc::embedding_db_server::EmbeddingDb;
+use crate::grpc::proximity_db_server::ProximityDb;
 use crate::sky::{Metrics, Sky};
 use std::sync::Arc;
 
 #[derive(Default)]
-pub struct EmbeddingDBHandler {
+pub struct ProximityDBHandler {
     sky: Arc<Sky>,
 }
 
-impl EmbeddingDBHandler {
+impl ProximityDBHandler {
     pub fn new(sky: Sky) -> Self {
-        EmbeddingDBHandler { sky: sky.into() }
+        ProximityDBHandler { sky: sky.into() }
     }
 }
 
 #[tonic::async_trait]
-impl EmbeddingDb for EmbeddingDBHandler {
+impl ProximityDb for ProximityDBHandler {
     type SearchStream = mpsc::UnboundedReceiver<Result<SearchResponse, Status>>;
 
     async fn search(

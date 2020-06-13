@@ -1,5 +1,5 @@
-use embedding_db::grpc::embedding_db_client::EmbeddingDbClient;
-use embedding_db::grpc::{AddRequest, ListRequest, Point as GrpcPoint, SearchRequest};
+use proximity_db::grpc::proximity_db_client::ProximityDbClient;
+use proximity_db::grpc::{AddRequest, ListRequest, Point as GrpcPoint, SearchRequest};
 use futures::StreamExt;
 use human_format::{Formatter, Scales};
 use rand::distributions::Standard;
@@ -42,7 +42,7 @@ enum Opt {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let opt = Opt::from_args();
-    let client = EmbeddingDbClient::connect("http://[::1]:50051").await?;
+    let client = ProximityDbClient::connect("http://[::1]:50051").await?;
     match opt {
         Opt::Fill {
             name,
@@ -61,7 +61,7 @@ async fn main() -> anyhow::Result<()> {
 }
 
 async fn search(
-    mut client: EmbeddingDbClient<Channel>,
+    mut client: ProximityDbClient<Channel>,
     name: String,
     dimensions: usize,
     within: f32,
@@ -96,7 +96,7 @@ async fn search(
 }
 
 async fn fill(
-    client: EmbeddingDbClient<Channel>,
+    client: ProximityDbClient<Channel>,
     name: String,
     dimensions: usize,
     number: usize,
@@ -150,7 +150,7 @@ async fn fill(
     Ok(())
 }
 
-async fn list(mut client: EmbeddingDbClient<Channel>, prefix: String) -> anyhow::Result<()> {
+async fn list(mut client: ProximityDbClient<Channel>, prefix: String) -> anyhow::Result<()> {
     let mut bytes_formatter = Formatter::new();
     bytes_formatter.with_scales(Scales::Binary());
 

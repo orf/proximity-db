@@ -1,5 +1,5 @@
 [package]
-name = "embedding-db"
+name = "proximity-db"
 version = "0.1.0"
 authors = ["Tom Forbes <tom@tomforb.es>"]
 edition = "2018"

@@ -1,16 +1,16 @@
-use embedding_db::grpc::embedding_db_server::EmbeddingDbServer;
-use embedding_db::handler::EmbeddingDBHandler;
-use embedding_db::sky::Sky;
+use proximity_db::grpc::proximity_db_server::ProximityDbServer;
+use proximity_db::handler::ProximityDBHandler;
+use proximity_db::sky::Sky;
 use tonic::transport::Server;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = "[::1]:50051".parse()?;
     let sky = Sky::default();
-    let embedding_handler = EmbeddingDBHandler::new(sky);
+    let embedding_handler = ProximityDBHandler::new(sky);
 
     Server::builder()
-        .add_service(EmbeddingDbServer::new(embedding_handler))
+        .add_service(ProximityDbServer::new(embedding_handler))
         .serve(addr)
         .await?;
 

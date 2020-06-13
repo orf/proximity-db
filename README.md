@@ -1,1 +1,1 @@
-# embeddingdb
+# Proximity DB
