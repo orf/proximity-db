@@ -141,13 +141,13 @@ mod tests {
     #[test]
     fn test_add() {
         let sky = Sky::default();
-        sky.add("hello".into(), vec![vec![1.0, 2.0, 3.0, 4.0]])
+        sky.add("hello".into(), vec![vec![1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0]])
             .unwrap();
     }
 
     #[test]
     fn test_query() {
-        let values = vec![1.0, 2.0, 3.0, 4.0];
+        let values = vec![1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0];
         let sky = Sky::default();
         sky.add("hello".into(), vec![values.clone()]).unwrap();
         let receiver = sky.query("hello".into(), 0.0, values.clone()).unwrap();

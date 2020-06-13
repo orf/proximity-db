@@ -49,6 +49,6 @@ mod tests {
 
     #[test]
     fn test_possible_choices() {
-        assert_eq!(SupportedSize::possible_choices(), "4, 64, 128, 256, 512, ");
+        assert_eq!(SupportedSize::possible_choices(), "8, 64, 128, 256, 512, ");
     }
 }
