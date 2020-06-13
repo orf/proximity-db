@@ -23,7 +23,7 @@ where
 }
 
 /// A constellation contains lots of points.
-pub struct VecSIMDConstellation<DimX>
+pub struct SIMDConstellation<DimX>
 where
     DimX: NamedDim,
     DefaultAllocator: Allocator<WideF32x4, DimX::Name>,
@@ -31,19 +31,19 @@ where
     points: Arc<RwLock<Vec<Point32<DimX::Name>>>>,
 }
 
-impl<DimX> Default for VecSIMDConstellation<DimX>
+impl<DimX> Default for SIMDConstellation<DimX>
 where
     DimX: NamedDim,
     DefaultAllocator: Allocator<WideF32x4, DimX::Name>,
 {
     fn default() -> Self {
-        VecSIMDConstellation {
+        SIMDConstellation {
             points: Arc::new(RwLock::new(Vec::new())),
         }
     }
 }
 
-impl<DimX> Constellation for VecSIMDConstellation<DimX>
+impl<DimX> Constellation for SIMDConstellation<DimX>
 where
     DimX: NamedDim + Sync,
     DefaultAllocator: Allocator<WideF32x4, DimX::Name>,
@@ -94,7 +94,7 @@ where
                 // finishes, and threads pile up.
                 std::mem::drop(tx);
             })
-            .unwrap();
+            .expect("Error spawning iterator thread");
         return Box::new(rx.into_iter());
     }
 
@@ -119,24 +119,24 @@ mod tests {
 
     #[test]
     fn test_len() {
-        crate::tests::test_length(&VecSIMDConstellation::<U1>::default());
-        crate::tests::test_length(&VecSIMDConstellation::<U16>::default());
+        crate::tests::test_length(&SIMDConstellation::<U1>::default());
+        crate::tests::test_length(&SIMDConstellation::<U16>::default());
     }
 
     #[test]
     fn test_mem() {
-        crate::tests::test_mem_size(&VecSIMDConstellation::<U1>::default());
-        crate::tests::test_mem_size(&VecSIMDConstellation::<U16>::default());
+        crate::tests::test_mem_size(&SIMDConstellation::<U1>::default());
+        crate::tests::test_mem_size(&SIMDConstellation::<U16>::default());
     }
 
     #[test]
     fn test_add_multiple() {
-        crate::tests::test_add_multiple(&VecSIMDConstellation::<U1>::default());
-        crate::tests::test_add_multiple(&VecSIMDConstellation::<U16>::default());
+        crate::tests::test_add_multiple(&SIMDConstellation::<U1>::default());
+        crate::tests::test_add_multiple(&SIMDConstellation::<U16>::default());
     }
 
     #[test]
     fn test_query() {
-        crate::tests::test_query(&VecSIMDConstellation::<U4>::default());
+        crate::tests::test_query(&SIMDConstellation::<U4>::default());
     }
 }

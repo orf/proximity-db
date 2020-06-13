@@ -35,7 +35,6 @@ impl<N: ArrayLength<f32>> Constellation for SimpleConstellation<N> {
                     .map(|(a, b)| (a - b).powf(2.))
                     .sum::<f32>()
                     .sqrt();
-                dbg!(distance);
                 if distance <= within {
                     return Some((distance, p.clone().into_iter().collect()));
                 }

@@ -1,5 +1,5 @@
 use crate::SupportedSize;
-use proximity::{Constellation, VecSIMDConstellation};
+use proximity::{Constellation, SIMDConstellation};
 
 use typenum::{U128, U16, U2, U32, U64};
 
@@ -14,11 +14,11 @@ impl ConstellationBuilder {
 
     pub fn build(&self) -> Box<dyn Constellation> {
         match self.size {
-            SupportedSize::U8 => Box::from(VecSIMDConstellation::<U2>::default()),
-            SupportedSize::U64 => Box::from(VecSIMDConstellation::<U16>::default()),
-            SupportedSize::U128 => Box::from(VecSIMDConstellation::<U32>::default()),
-            SupportedSize::U256 => Box::from(VecSIMDConstellation::<U64>::default()),
-            SupportedSize::U512 => Box::from(VecSIMDConstellation::<U128>::default()),
+            SupportedSize::U8 => Box::from(SIMDConstellation::<U2>::default()),
+            SupportedSize::U64 => Box::from(SIMDConstellation::<U16>::default()),
+            SupportedSize::U128 => Box::from(SIMDConstellation::<U32>::default()),
+            SupportedSize::U256 => Box::from(SIMDConstellation::<U64>::default()),
+            SupportedSize::U512 => Box::from(SIMDConstellation::<U128>::default()),
         }
     }
 }

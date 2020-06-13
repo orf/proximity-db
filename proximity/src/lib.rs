@@ -6,7 +6,7 @@ pub use simple::SimpleConstellation;
 mod simd_vec;
 
 #[cfg(feature = "simd")]
-pub use simd_vec::VecSIMDConstellation;
+pub use simd_vec::SIMDConstellation;
 
 pub type QueryIterator = Box<dyn Iterator<Item = (f32, Vec<f32>)>>;
 

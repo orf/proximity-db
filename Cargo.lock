@@ -1102,6 +1102,7 @@ dependencies = [
  "crossbeam-channel",
  "generic-array 0.14.2",
  "nalgebra",
+ "num_cpus",
  "rand",
  "rayon",
  "simba",

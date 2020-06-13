@@ -2,14 +2,12 @@ use criterion::measurement::WallTime;
 use criterion::{
     criterion_group, criterion_main, BatchSize, BenchmarkGroup, BenchmarkId, Criterion, Throughput,
 };
-use enum_iterator::IntoEnumIterator;
-use proximity_db::sky::Sky;
-use proximity_db::SupportedSize;
+use proximity::{Constellation, SIMDConstellation, SimpleConstellation};
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
-use rand::seq::SliceRandom;
 use rand::Rng;
 use std::time::Duration;
+use typenum::{U128, U16, U2, U256, U32, U512, U64, U8};
 
 fn random_points(count: usize, dimension: usize) -> Vec<Vec<f32>> {
     let rng = rand::thread_rng();
@@ -18,35 +16,25 @@ fn random_points(count: usize, dimension: usize) -> Vec<Vec<f32>> {
         .collect()
 }
 
-fn bench_search(group: &mut BenchmarkGroup<WallTime>, dimension: usize)
+fn bench_search(group: &mut BenchmarkGroup<WallTime>, factory: &dyn Fn() -> Box<dyn Constellation>)
 where
     Standard: Distribution<f32>,
 {
     // let mut rng = thread_rng();
+    for number_of_points in (250_000..=1_000_000).step_by(250_000) {
+        let constellation: Box<dyn Constellation> = factory();
+        let dimension = constellation.dimensions();
 
-    for number_of_points in (100_000..=1_000_000).step_by(100_000) {
-        //(250_000..1_000_000).step_by(250_000) {
-        let sky = Sky::default();
-
-        // Add 100,000 random vectors
-        sky.add("test".into(), random_points(number_of_points, dimension))
-            .expect("Error adding vectors");
-
+        constellation.add_points(random_points(number_of_points, dimension));
         let random_point = random_points(1, dimension).first().unwrap().clone();
 
-        // let iterator = sky.query("test".into(), 1., random_point).unwrap();
-        // black_box(iterator.collect::<Vec<(f32, Vec<f32>)>>());
         group.throughput(Throughput::Elements(number_of_points as u64));
         group.bench_function(
-            BenchmarkId::new(format!("{}", dimension), number_of_points),
+            BenchmarkId::new(format!("dim: {}", dimension), number_of_points),
             |b| {
                 b.iter_batched(
                     || random_point.clone(),
-                    |p| {
-                        sky.query("test".to_string(), 0., p)
-                            .unwrap()
-                            .collect::<Vec<(f32, Vec<f32>)>>()
-                    },
+                    |p| constellation.find(p, 0.).collect::<Vec<(f32, Vec<f32>)>>(),
                     BatchSize::PerIteration,
                 );
             },
@@ -60,13 +48,36 @@ fn run_bench(c: &mut Criterion) {
         .thread_name(|idx| format!("rayon-iter-{}", idx))
         .build_global()
         .unwrap();
-    let mut g = c.benchmark_group("search_no_match");
-    // g.warm_up_time(Duration::from_secs(0));
-    g.measurement_time(Duration::from_secs(30));
-    for size in SupportedSize::into_enum_iter() {
-        bench_search(&mut g, size.into());
-    }
-    g.finish()
+    let mut simple = c.benchmark_group("simple");
+    simple.measurement_time(Duration::from_secs(30));
+    bench_search(&mut simple, &|| {
+        Box::new(SimpleConstellation::<U8>::default())
+    });
+    bench_search(&mut simple, &|| {
+        Box::new(SimpleConstellation::<U64>::default())
+    });
+    bench_search(&mut simple, &|| {
+        Box::new(SimpleConstellation::<U128>::default())
+    });
+    bench_search(&mut simple, &|| {
+        Box::new(SimpleConstellation::<U256>::default())
+    });
+    bench_search(&mut simple, &|| {
+        Box::new(SimpleConstellation::<U512>::default())
+    });
+    simple.finish();
+
+    let mut simd = c.benchmark_group("simd");
+    simd.measurement_time(Duration::from_secs(30));
+    bench_search(&mut simd, &|| Box::new(SIMDConstellation::<U2>::default()));
+    bench_search(&mut simd, &|| Box::new(SIMDConstellation::<U16>::default()));
+    bench_search(&mut simd, &|| Box::new(SIMDConstellation::<U32>::default()));
+    bench_search(&mut simd, &|| Box::new(SIMDConstellation::<U64>::default()));
+    bench_search(
+        &mut simd,
+        &|| Box::new(SIMDConstellation::<U128>::default()),
+    );
+    simd.finish();
 }
 
 criterion_group!(benches, run_bench);
