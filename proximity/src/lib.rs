@@ -3,10 +3,10 @@ mod simple;
 pub use simple::SimpleConstellation;
 
 #[cfg(feature = "simd")]
-mod vec;
+mod simd_vec;
 
 #[cfg(feature = "simd")]
-pub use vec::VecSIMDConstellation;
+pub use simd_vec::VecSIMDConstellation;
 
 pub type QueryIterator = Box<dyn Iterator<Item = (f32, Vec<f32>)>>;
 
