@@ -1,15 +1,14 @@
 use crate::Constellation;
 use generic_array::{ArrayLength, GenericArray};
 use std::sync::RwLock;
-use typenum::Unsigned;
 
 /// A slow, reference constellation.
 #[derive(Default)]
-pub struct SimpleConstellation<N: Unsigned + ArrayLength<f32>> {
+pub struct SimpleConstellation<N: ArrayLength<f32>> {
     points: RwLock<Vec<GenericArray<f32, N>>>,
 }
 
-impl<N: Unsigned + ArrayLength<f32>> Constellation<N> for SimpleConstellation<N> {
+impl<N: ArrayLength<f32>> Constellation for SimpleConstellation<N> {
     fn add_points(&self, points: Vec<Vec<f32>>) {
         self.points
             .write()

@@ -2,7 +2,7 @@
 
 members = [
     "proximity",
-    "proximity-server",
+    "proximity-db",
     "proximity-grpc",
     "proximity-cli",
 ]

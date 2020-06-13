@@ -1,8 +1,7 @@
 use crate::SupportedSize;
 use proximity::{Constellation, VecSIMDConstellation};
 
-use nalgebra::{U16, U2, U32, U64};
-use typenum::U128;
+use typenum::{U16, U2, U32, U64, U128};
 
 pub struct ConstellationBuilder {
     size: SupportedSize,

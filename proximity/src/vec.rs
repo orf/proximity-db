@@ -43,7 +43,7 @@ where
     }
 }
 
-impl<DimX> Constellation<DimX> for VecSIMDConstellation<DimX>
+impl<DimX> Constellation for VecSIMDConstellation<DimX>
 where
     DimX: NamedDim + Sync,
     DefaultAllocator: Allocator<WideF32x4, DimX::Name>,
