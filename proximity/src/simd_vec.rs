@@ -17,7 +17,7 @@ where
 {
     let wide_vec: Vec<WideF32x4> = point
         .chunks(4)
-        .map(|c| WideF32x4::from(<[f32; 4]>::from([c[0], c[1], c[2], c[3]])))
+        .map(|c| WideF32x4::from([c[0], c[1], c[2], c[3]]))
         .collect();
     VectorN::<WideF32x4, DimX::Name>::from_vec(wide_vec).into()
 }
@@ -54,7 +54,7 @@ where
             .clone()
             .write()
             .unwrap()
-            .extend(points.into_iter().map(|p| make_point::<DimX>(p)))
+            .extend(points.into_iter().map(make_point::<DimX>))
     }
 
     fn find(&self, point: Vec<f32>, within: f32) -> Box<dyn Iterator<Item = (f32, Vec<f32>)>> {
@@ -95,7 +95,7 @@ where
                 std::mem::drop(tx);
             })
             .expect("Error spawning iterator thread");
-        return Box::new(rx.into_iter());
+        Box::new(rx.into_iter())
     }
 
     fn count(&self) -> usize {

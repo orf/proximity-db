@@ -2,9 +2,7 @@ use criterion::{
     criterion_group, criterion_main, measurement::WallTime, BatchSize, BenchmarkGroup, BenchmarkId,
     Criterion, Throughput,
 };
-use proximity::{
-    Constellation, SIMDConstellation, SimpleConstellation, sizes::*,
-};
+use proximity::{sizes::*, Constellation, SIMDConstellation, SimpleConstellation};
 use rand::{distributions::Standard, Rng};
 use std::time::Duration;
 

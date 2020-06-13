@@ -49,10 +49,13 @@ impl ProximityDb for ProximityDBHandler {
                 }
                 Ok(query_iterator) => {
                     for (distance, coords) in query_iterator {
-                        if let Err(_) = tx.send(Ok(SearchResponse {
-                            distance,
-                            point: Some(GrpcPoint { coords }),
-                        })) {
+                        if tx
+                            .send(Ok(SearchResponse {
+                                distance,
+                                point: Some(GrpcPoint { coords }),
+                            }))
+                            .is_err()
+                        {
                             break;
                         }
                     }
@@ -97,7 +100,7 @@ impl ProximityDb for ProximityDBHandler {
         let (tx, rx) = mpsc::unbounded_channel();
 
         for metric in self.sky.list(&prefix) {
-            if let Err(_) = tx.send(Ok(metric.into())) {
+            if tx.send(Ok(metric.into())).is_err() {
                 break;
             }
         }

@@ -1,9 +1,9 @@
+use num_cpus;
 use proximity_db::handler::ProximityDBHandler;
 use proximity_db::sky::Sky;
 use proximity_grpc::proximity_db_server::ProximityDbServer;
-use tonic::transport::Server;
 use structopt::StructOpt;
-use num_cpus;
+use tonic::transport::Server;
 
 #[derive(Debug, StructOpt)]
 #[structopt(about = "Run a proximity database instance.")]
@@ -13,7 +13,7 @@ struct Opt {
     address: String,
     #[structopt(short, long, env = "PROXIMITY_THREADS")]
     /// Specifies how many threads Proximity DB will use. Defaults to CPU count - 1
-    threads: Option<usize>
+    threads: Option<usize>,
 }
 
 #[tokio::main]

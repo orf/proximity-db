@@ -58,7 +58,7 @@ impl<'a> Sky {
         for value in &values {
             if value.len() != expected {
                 return Err(SkyError::IncorrectSize {
-                    name: name.clone(),
+                    name,
                     expected,
                     given: value.len(),
                 });
@@ -66,7 +66,7 @@ impl<'a> Sky {
         }
         let total_points = values.len();
         constellation_rw.add_points(values);
-        return Ok(total_points);
+        Ok(total_points)
     }
 
     pub fn query(
@@ -111,7 +111,7 @@ impl<'a> Sky {
             .get(name)
             .ok_or_else(|| SkyError::NotFound(name.clone()))?;
 
-        return Ok(Metrics::from_constellation(name.clone(), &constellation));
+        Ok(Metrics::from_constellation(name.clone(), &constellation))
     }
 }
 

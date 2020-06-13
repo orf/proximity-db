@@ -19,10 +19,10 @@ pub enum SupportedSize {
 
 impl SupportedSize {
     pub fn possible_choices() -> String {
-        return SupportedSize::into_enum_iter().fold(String::new(), |a, b| {
+        SupportedSize::into_enum_iter().fold(String::new(), |a, b| {
             let value: usize = b.into();
             format!("{}{}, ", a, value)
-        });
+        })
     }
 }
 
@@ -39,7 +39,7 @@ impl FromStr for SupportedSize {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let target: usize = s.parse()?;
-        return Ok(SupportedSize::try_from_primitive(target)?);
+        Ok(SupportedSize::try_from_primitive(target)?)
     }
 }
 
