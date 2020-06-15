@@ -17,6 +17,8 @@ thiserror = "1.0.19"
 structopt = "0.3.14"
 num_cpus = "1.13.0"
 rayon = "1.3.0"
+raft = { git = "https://github.com/tikv/raft-rs.git", default_features = false, features = ['prost-codec', 'default-logger'] }
 
 proximity-grpc = { path = "../proximity-grpc", version = "0.1.1" }
 proximity = { path = "../proximity", version = "0.1.1" }
+
