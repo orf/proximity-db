@@ -8,15 +8,15 @@ license = "GPL-3.0"
 
 [dependencies]
 tonic = "0.2.1"
-tokio = { version = "0.2.21", features = ["macros", "sync", "rt-core"] }
+tokio = { version = "0.2.21", features = ["macros", "sync", "rt-core"], default_features = false }
 num_enum = "0.5.0"
 enum-iterator = "0.6.0"
 dashmap = "3.11.4"
 anyhow = "1.0.31"
-thiserror = "1.0.19"
-structopt = "0.3.14"
+thiserror = "1.0.20"
+structopt = "0.3.15"
 num_cpus = "1.13.0"
-rayon = "1.3.0"
+rayon = "1.3.1"
 raft = { git = "https://github.com/tikv/raft-rs.git", default_features = false, features = ['prost-codec', 'default-logger'] }
 
 proximity-grpc = { path = "../proximity-grpc", version = "0.1.1" }
