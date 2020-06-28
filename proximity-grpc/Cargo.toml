@@ -9,7 +9,7 @@ license = "GPL-3.0"
 [dependencies]
 tonic = "0.2.1"
 prost = "0.6.1"
-serde = { version = "1.0.112", features = ["derive"] }
+serde = { version = "1.0.114", features = ["derive"] }
 
 [build-dependencies]
 tonic-build = "0.2.0"
